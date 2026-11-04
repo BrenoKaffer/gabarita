@@ -285,8 +285,10 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
   const ctEl = document.getElementById('countdown-text');
   if (ctEl) ctEl.textContent = `${nearest.days} dias · ${nearest.name}`;
 
-  document.getElementById('cgu-days'  )!.textContent = `${cgDays}d`;
-  document.getElementById('setec-days')!.textContent = `${setecDays}d`;
+  const cguDaysEl  = document.getElementById('cgu-days');
+  const setecDaysEl = document.getElementById('setec-days');
+  if (cguDaysEl)   cguDaysEl.textContent  = `${cgDays}d`;
+  if (setecDaysEl) setecDaysEl.textContent = `${setecDays}d`;
 
   // ── Sidebar stats ──
   async function loadSidebarStats() {
