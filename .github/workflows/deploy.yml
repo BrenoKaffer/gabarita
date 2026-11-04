@@ -1,0 +1,21 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 18.223.196.61
+          username: admin
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/admin/gabarita-repo
+            git pull
+            cp -r frontend/dist/* /home/admin/gabarita/frontend/dist/
+            echo "Deploy OK - $(date)"
