@@ -1,0 +1,7 @@
+---
+// Redireciona: logado → /home, não logado → /login
+---
+<script>
+  const token = localStorage.getItem('gab_token');
+  location.href = token ? '/home' : '/login';
+</script>

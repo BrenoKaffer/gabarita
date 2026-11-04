@@ -1,0 +1,442 @@
+{
+  "SETEC-ADM-001": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-002": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-003": {
+    "correct": "C",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-004": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-005": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-006": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-007": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-008": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-009": {
+    "correct": "C",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-010": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-011": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-012": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-013": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-014": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-015": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-016": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-017": {
+    "correct": "C",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ADM-018": {
+    "correct": "B",
+    "disc": "ADM",
+    "source": "created"
+  },
+  "SETEC-ARQ-001": {
+    "correct": "B",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-002": {
+    "correct": "D",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-003": {
+    "correct": "C",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-004": {
+    "correct": "B",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-005": {
+    "correct": "D",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-006": {
+    "correct": "C",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-007": {
+    "correct": "B",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-008": {
+    "correct": "B",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-009": {
+    "correct": "C",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-010": {
+    "correct": "B",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-011": {
+    "correct": "C",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-012": {
+    "correct": "D",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-013": {
+    "correct": "B",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-014": {
+    "correct": "C",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-015": {
+    "correct": "B",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-016": {
+    "correct": "C",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-017": {
+    "correct": "C",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-018": {
+    "correct": "D",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-019": {
+    "correct": "B",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-ARQ-020": {
+    "correct": "C",
+    "disc": "ARQ",
+    "source": "created"
+  },
+  "SETEC-DADM-001": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-002": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-003": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-004": {
+    "correct": "D",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-005": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-006": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-007": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-008": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-009": {
+    "correct": "A",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-010": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-011": {
+    "correct": "C",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-012": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-013": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-014": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-DADM-015": {
+    "correct": "B",
+    "disc": "DADM",
+    "source": "created"
+  },
+  "SETEC-LIC-001": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-002": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-003": {
+    "correct": "C",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-004": {
+    "correct": "C",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-005": {
+    "correct": "C",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-006": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-007": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-008": {
+    "correct": "D",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-009": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-010": {
+    "correct": "C",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-011": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-012": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-013": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-014": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-015": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-016": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-LIC-017": {
+    "correct": "B",
+    "disc": "LIC",
+    "source": "created"
+  },
+  "SETEC-ORC-001": {
+    "correct": "B",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-002": {
+    "correct": "C",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-003": {
+    "correct": "D",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-004": {
+    "correct": "B",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-005": {
+    "correct": "C",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-006": {
+    "correct": "B",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-007": {
+    "correct": "C",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-008": {
+    "correct": "C",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-009": {
+    "correct": "D",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-010": {
+    "correct": "B",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-011": {
+    "correct": "B",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-012": {
+    "correct": "C",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-013": {
+    "correct": "C",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-014": {
+    "correct": "B",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-015": {
+    "correct": "C",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-016": {
+    "correct": "B",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-017": {
+    "correct": "C",
+    "disc": "ORC",
+    "source": "created"
+  },
+  "SETEC-ORC-018": {
+    "correct": "B",
+    "disc": "ORC",
+    "source": "created"
+  }
+}

@@ -1,0 +1,174 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+<MainLayout title="Estatísticas">
+<style>
+  .stat-card {
+    background: white; border: 1.5px solid #191a23; border-radius: 16px;
+    padding: 20px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .stat-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
+  }
+  .sim-badge {
+    font-size: 0.7rem; font-weight: 700; padding: 3px 8px;
+    border-radius: 999px; white-space: nowrap;
+  }
+  .disc-row {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 8px; align-items: center;
+  }
+</style>
+
+<div class="mb-6">
+  <h1 class="text-xl font-semibold">Suas <span class="greenhead">Estatísticas</span></h1>
+  <p class="text-xs text-dark/40 mt-0.5">Resumo completo do seu progresso</p>
+</div>
+
+<!-- 4 stat cards -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+  <div class="stat-card">
+    <div class="stat-icon bg-dark/5">
+      <svg class="w-5 h-5 text-dark/60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
+    </div>
+    <div class="text-3xl font-semibold text-dark" id="st-respondidas">—</div>
+    <div class="text-xs text-dark/50">Respondidas</div>
+  </div>
+  <div class="stat-card" style="background:#b9ff66">
+    <div class="stat-icon bg-dark/10">
+      <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <div class="text-3xl font-semibold text-dark" id="st-acertos">—</div>
+    <div class="text-xs text-dark/60">Acertos</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon bg-red-50">
+      <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </div>
+    <div class="text-3xl font-semibold text-dark" id="st-erros">—</div>
+    <div class="text-xs text-dark/50">Erros</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon bg-dark/5">
+      <svg class="w-5 h-5 text-dark/60" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+    </div>
+    <div class="text-3xl font-semibold text-dark" id="st-pct">—</div>
+    <div class="text-xs text-dark/50">Aproveitamento</div>
+  </div>
+</div>
+
+<!-- Por disciplina + simulados -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+  <!-- Por disciplina -->
+  <div class="card">
+    <h2 class="text-base font-semibold mb-5">Por disciplina</h2>
+    <div id="disc-table" class="flex flex-col gap-4">
+      <div class="text-sm text-dark/40">Carregando…</div>
+    </div>
+  </div>
+
+  <!-- Simulados -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-base font-semibold">Histórico de simulados</h2>
+      <a href="/simulado" class="text-xs text-dark/40 hover:text-dark transition-colors">Novo →</a>
+    </div>
+    <div id="sim-table">
+      <div class="text-sm text-dark/40">Carregando…</div>
+    </div>
+  </div>
+
+</div>
+</MainLayout>
+
+<script>
+const token = localStorage.getItem('gab_token');
+
+async function loadStats() {
+  const res = await fetch('/api/stats', { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) return;
+  const { byDisc, overall, simulados } = await res.json();
+
+  const pct = overall.respondidas
+    ? Math.round((overall.acertos / overall.respondidas) * 100) : 0;
+
+  document.getElementById('st-respondidas')!.textContent = overall.respondidas || 0;
+  document.getElementById('st-acertos')!.textContent     = overall.acertos || 0;
+  document.getElementById('st-erros')!.textContent       = (overall.respondidas||0)-(overall.acertos||0);
+  document.getElementById('st-pct')!.textContent         = pct + '%';
+
+  // ── Por disciplina ──
+  const dt = document.getElementById('disc-table')!;
+  if (!byDisc.length) {
+    dt.innerHTML = `
+      <div class="flex flex-col items-center py-8 text-center gap-2">
+        <svg class="w-8 h-8 text-dark/20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p class="text-sm text-dark/40">Nenhuma questão respondida.</p>
+      </div>`;
+  } else {
+    dt.innerHTML = '';
+    for (const { disc, total, acertos } of byDisc) {
+      const p     = total ? Math.round((acertos / total) * 100) : 0;
+      const color = p >= 70 ? '#b9ff66' : (p >= 50 ? '#fde68a' : '#fca5a5');
+      const tcol  = p >= 70 ? '#166534' : (p >= 50 ? '#854d0e' : '#991b1b');
+      const label = p >= 70 ? 'Ótimo' : (p >= 50 ? 'Regular' : 'Reforçar');
+      dt.insertAdjacentHTML('beforeend', `
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-sm font-medium text-dark">${disc}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-dark/50">${acertos}/${total}</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full" style="background:${color};color:${tcol}">${label} · ${p}%</span>
+            </div>
+          </div>
+          <div class="h-2 rounded-full bg-dark/8 overflow-hidden">
+            <div class="h-full rounded-full transition-all duration-500" style="width:${p}%;background:${color}"></div>
+          </div>
+        </div>`);
+    }
+  }
+
+  // ── Simulados ──
+  const st = document.getElementById('sim-table')!;
+  if (!simulados.length) {
+    st.innerHTML = `
+      <div class="flex flex-col items-center py-8 text-center gap-2">
+        <svg class="w-8 h-8 text-dark/20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="text-sm text-dark/40">Nenhum simulado realizado.</p>
+        <a href="/simulado" class="text-xs font-medium text-dark underline underline-offset-2">Fazer primeiro simulado →</a>
+      </div>`;
+  } else {
+    st.innerHTML = '';
+    for (const s of simulados) {
+      const p   = s.total ? Math.round((s.acertos / s.total) * 100) : 0;
+      const dur = s.duration_s ? `${Math.floor(s.duration_s/60)}m${(s.duration_s%60).toString().padStart(2,'0')}s` : '—';
+      const bg  = p >= 70 ? '#b9ff66' : (p >= 50 ? '#fde68a' : '#fee2e2');
+      const fg  = p >= 70 ? '#166534' : (p >= 50 ? '#854d0e' : '#991b1b');
+      st.insertAdjacentHTML('beforeend', `
+        <div class="flex items-center justify-between py-2.5 border-b border-dark/8 last:border-0 gap-3">
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-dark truncate">${s.disc || 'Misto'}</p>
+            <p class="text-xs text-dark/40">${new Date(s.created_at).toLocaleDateString('pt-BR')} · ${dur} · ${s.total}q</p>
+          </div>
+          <span class="sim-badge shrink-0" style="background:${bg};color:${fg}">${s.acertos}/${s.total} — ${p}%</span>
+        </div>`);
+    }
+  }
+}
+
+loadStats();
+</script>

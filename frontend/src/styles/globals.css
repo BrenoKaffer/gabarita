@@ -1,0 +1,178 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --green:    #b9ff66;
+    --dark:     #191a23;
+    --offwhite: #f3f3f3;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    background: var(--offwhite);
+    color: var(--dark);
+  }
+
+  h1 { font-size: 2rem;   font-weight: 500; line-height: 1.2; }
+  h2 { font-size: 1.5rem; font-weight: 500; }
+  h3 { font-size: 1.25rem; font-weight: 500; }
+}
+
+@layer components {
+  /* ── Botões ── */
+  .btn {
+    @apply px-6 py-3 rounded-btn font-medium transition-all duration-200 cursor-pointer;
+  }
+  .btn-primary {
+    @apply btn bg-dark text-white hover:bg-green hover:text-black hover:scale-105;
+  }
+  .btn-secondary {
+    @apply btn bg-transparent text-dark border border-dark hover:bg-dark hover:text-white hover:scale-105;
+  }
+  .btn-green {
+    @apply btn bg-green text-black hover:bg-white hover:scale-105;
+  }
+
+  /* ── Cards ── */
+  .card {
+    @apply rounded-card border border-dark shadow-card bg-white p-6;
+  }
+  .card-green {
+    @apply rounded-card border border-dark shadow-card bg-green p-6;
+  }
+  .card-dark {
+    @apply rounded-card border border-dark shadow-card bg-dark text-white p-6;
+  }
+
+  /* ── Badges de disciplina ── */
+  .disc-badge {
+    @apply text-xs font-medium px-2 py-0.5 rounded-badge bg-green text-dark;
+  }
+
+  /* ── Highlight de texto (greenhead) ── */
+  .greenhead { @apply bg-green text-dark rounded-badge px-1.5; }
+  .whitehead { @apply bg-white text-dark rounded-badge px-1.5; }
+
+  /* ── Input ── */
+  .input {
+    @apply w-full border border-dark rounded-btn px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-green transition-all;
+  }
+
+  /* ── Progress bar ── */
+  .progress-bar {
+    @apply h-2 rounded-full bg-dark overflow-hidden;
+  }
+  .progress-fill {
+    @apply h-full bg-green transition-all duration-500;
+  }
+
+  /* ── Alternativa de questão (legado) ── */
+  .alt-btn {
+    @apply w-full text-left px-4 py-3 rounded-btn border border-dark bg-white
+           hover:bg-green hover:border-dark transition-all duration-150 cursor-pointer font-medium;
+  }
+}
+
+/* ── Question card — global (usado via innerHTML dinâmico) ── */
+.q-card {
+  background: white;
+  border: 1.5px solid #191a23;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0px 4px 0px #191a23;
+}
+.q-header {
+  background: rgba(25,26,35,0.04);
+  border-bottom: 1px solid rgba(25,26,35,0.08);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.q-meta {
+  padding: 8px 16px 0;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.q-meta span { font-size: 0.72rem; color: rgba(25,26,35,0.4); }
+.q-meta strong { color: rgba(25,26,35,0.7); font-weight: 600; }
+.q-body { padding: 14px 16px 10px; }
+.q-enunciado { line-height: 1.65; color: #191a23; }
+.q-num { font-size: 0.75rem; font-weight: 700; color: rgba(25,26,35,0.3); min-width: 20px; }
+.q-id {
+  font-size: 0.7rem; font-family: monospace;
+  background: rgba(25,26,35,0.08); color: rgba(25,26,35,0.5);
+  padding: 2px 6px; border-radius: 4px;
+}
+.q-breadcrumb { font-size: 0.75rem; color: rgba(25,26,35,0.5); }
+.q-breadcrumb strong { color: rgba(25,26,35,0.8); font-weight: 600; }
+.q-footer {
+  border-top: 1px solid rgba(25,26,35,0.08);
+  padding: 8px 16px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.q-footer button {
+  font-size: 0.75rem; color: rgba(25,26,35,0.4);
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: none; cursor: pointer;
+  transition: color 0.15s; padding: 0;
+}
+.q-footer button:hover { color: #191a23; }
+.q-footer button.fav-on { color: #191a23; }
+
+/* ── Alternativas (novo design) ── */
+.alt-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(25,26,35,0.15);
+  background: white;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+}
+.alt-opt:hover:not([disabled]) { border-color: #191a23; background: #fafafa; }
+.alt-opt.selected { border-color: #191a23; background: rgba(25,26,35,0.04); }
+.alt-opt[disabled] { cursor: default; }
+.alt-opt.selected .alt-letter { border-color: #191a23; background: #191a23; color: #b9ff66; }
+.alt-opt.alt-correct .alt-letter { border-color: #191a23; background: #b9ff66; color: #191a23; }
+.alt-opt.alt-wrong   .alt-letter { border-color: #ef4444; background: #fee2e2; color: #ef4444; }
+.alt-opt.alt-correct { background: rgba(185,255,102,0.1); border-color: #b9ff66; }
+.alt-opt.alt-wrong   { background: rgba(239,68,68,0.06);  border-color: #fca5a5; }
+.alt-opt.alt-neutral { opacity: 0.45; }
+.alt-opt.alt-disabled:not(.alt-correct):not(.alt-wrong) { opacity: 0.5; }
+
+.alt-letter {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid rgba(25,26,35,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
+  transition: all 0.15s; color: rgba(25,26,35,0.5);
+}
+.alt-text { font-size: 0.875rem; line-height: 1.55; color: #191a23; flex: 1; padding-top: 3px; }
+
+/* ── Simulado: seleção com fundo escuro (dentro de #sim-question) ── */
+#sim-question .alt-opt.selected { background: #191a23; border-color: #191a23; }
+#sim-question .alt-opt.selected .alt-letter { background: #b9ff66; border-color: #b9ff66; color: #191a23; }
+#sim-question .alt-opt.selected .alt-text { color: white; }
+
+/* ── Simulado result rows ── */
+.res-disc-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: 1px solid rgba(25,26,35,0.07);
+}
+.res-disc-row:last-child { border-bottom: none; }

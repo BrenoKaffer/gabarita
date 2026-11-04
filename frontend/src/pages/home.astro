@@ -1,0 +1,207 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+<MainLayout title="Início">
+<style>
+  .action-card {
+    display: block; border-radius: 20px; border: 1.5px solid #191a23;
+    box-shadow: 0px 4px 0px #191a23; padding: 20px;
+    transition: transform 0.15s, box-shadow 0.15s; text-decoration: none;
+  }
+  .action-card:hover { transform: translateY(-2px); box-shadow: 0px 6px 0px #191a23; }
+  .action-card:active { transform: translateY(2px); box-shadow: 0px 2px 0px #191a23; }
+  .action-icon {
+    width: 44px; height: 44px; border-radius: 12px; display: flex;
+    align-items: center; justify-content: center; margin-bottom: 12px;
+  }
+  .stat-tile {
+    background: white; border: 1.5px solid #191a23; border-radius: 16px;
+    padding: 16px; text-align: center;
+  }
+  .disc-row { display: grid; grid-template-columns: 140px 1fr 60px; align-items: center; gap: 12px; }
+</style>
+
+<!-- Welcome -->
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-semibold">Olá, <span id="user-name" class="greenhead">…</span>!</h1>
+    <p class="text-sm text-dark/50 mt-0.5" id="welcome-sub">Pronto para estudar?</p>
+  </div>
+  <div id="user-avatar-big"
+    class="w-12 h-12 rounded-full bg-green border-2 border-dark flex items-center justify-center text-dark font-bold text-lg hidden sm:flex">
+    B
+  </div>
+</div>
+
+<!-- Quick actions -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+  <a href="/study" class="action-card bg-green">
+    <div class="action-icon bg-dark/10">
+      <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+      </svg>
+    </div>
+    <h3 class="font-semibold text-dark">Revisão Livre</h3>
+    <p class="text-xs text-dark/60 mt-1">Questão a questão com gabarito imediato</p>
+  </a>
+  <a href="/simulado" class="action-card bg-white">
+    <div class="action-icon bg-dark/5">
+      <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </div>
+    <h3 class="font-semibold text-dark">Simulado</h3>
+    <p class="text-xs text-dark/50 mt-1">Prova cronometrada com gabarito no final</p>
+  </a>
+  <a href="/erros" class="action-card bg-dark">
+    <div class="action-icon bg-white/10">
+      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+    </div>
+    <h3 class="font-semibold text-white">Revisão de Erros</h3>
+    <p class="text-xs text-white/50 mt-1">Refaça as questões que você errou</p>
+  </a>
+</div>
+
+<!-- Stats grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+  <div class="stat-tile">
+    <div class="text-3xl font-semibold text-dark" id="stat-respondidas">—</div>
+    <div class="text-xs text-dark/50 mt-1">Respondidas</div>
+  </div>
+  <div class="stat-tile">
+    <div class="text-3xl font-semibold text-dark" id="stat-acertos">—</div>
+    <div class="text-xs text-dark/50 mt-1">Acertos</div>
+  </div>
+  <div class="stat-tile">
+    <div class="text-3xl font-semibold text-dark" id="stat-erros">—</div>
+    <div class="text-xs text-dark/50 mt-1">Erros</div>
+  </div>
+  <div class="stat-tile" style="background:#b9ff66">
+    <div class="text-3xl font-semibold text-dark" id="stat-pct">—</div>
+    <div class="text-xs text-dark/60 mt-1">Aproveitamento</div>
+  </div>
+</div>
+
+<!-- Por disciplina + últimos simulados (lado a lado em telas grandes) -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+  <!-- Disciplinas -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-semibold">Por disciplina</h2>
+      <a href="/stats" class="text-xs text-dark/40 hover:text-dark transition-colors">Ver tudo →</a>
+    </div>
+    <div id="disc-bars" class="flex flex-col gap-3">
+      <div class="text-sm text-dark/40">Carregando…</div>
+    </div>
+  </div>
+
+  <!-- Últimos simulados -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-semibold">Últimos simulados</h2>
+      <a href="/simulado" class="text-xs text-dark/40 hover:text-dark transition-colors">Novo →</a>
+    </div>
+    <div id="simulados-list">
+      <div class="text-sm text-dark/40">Carregando…</div>
+    </div>
+  </div>
+
+</div>
+</MainLayout>
+
+<script>
+  const token = localStorage.getItem('gab_token');
+  const user  = JSON.parse(localStorage.getItem('gab_user') || '{}');
+
+  if (user.name) {
+    const first    = user.name.split(' ')[0];
+    const initials = user.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+    document.getElementById('user-name')!.textContent = first;
+    const av = document.getElementById('user-avatar-big')!;
+    av.textContent = initials;
+
+    const hour = new Date().getHours();
+    const sub  = document.getElementById('welcome-sub')!;
+    if      (hour < 12) sub.textContent = 'Bom dia! Hora de revisar.';
+    else if (hour < 18) sub.textContent = 'Boa tarde! Continue firme.';
+    else                sub.textContent = 'Boa noite! Uma questão antes de dormir?';
+  }
+
+  async function loadStats() {
+    const res = await fetch('/api/stats', { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const { byDisc, overall, simulados } = await res.json();
+
+    const pct = overall.respondidas
+      ? Math.round((overall.acertos / overall.respondidas) * 100) : 0;
+
+    document.getElementById('stat-respondidas')!.textContent = overall.respondidas || 0;
+    document.getElementById('stat-acertos')!.textContent     = overall.acertos || 0;
+    document.getElementById('stat-erros')!.textContent       = (overall.respondidas||0)-(overall.acertos||0);
+    document.getElementById('stat-pct')!.textContent         = pct + '%';
+
+    // Barras por disciplina
+    const bars = document.getElementById('disc-bars')!;
+    if (!byDisc.length) {
+      bars.innerHTML = `
+        <div class="flex flex-col items-center py-6 text-center gap-2">
+          <svg class="w-8 h-8 text-dark/20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <p class="text-sm text-dark/40">Nenhuma questão respondida ainda.</p>
+          <a href="/study" class="text-xs font-medium text-dark underline underline-offset-2">Começar revisão →</a>
+        </div>`;
+    } else {
+      bars.innerHTML = '';
+      for (const { disc, total, acertos } of byDisc) {
+        const p     = total ? Math.round((acertos / total) * 100) : 0;
+        const color = p >= 70 ? '#b9ff66' : (p >= 50 ? '#fde68a' : '#fca5a5');
+        bars.insertAdjacentHTML('beforeend', `
+          <div class="disc-row">
+            <span class="text-xs font-medium text-dark truncate">${disc}</span>
+            <div class="h-2 rounded-full bg-dark/8 overflow-hidden">
+              <div class="h-full rounded-full transition-all" style="width:${p}%;background:${color}"></div>
+            </div>
+            <span class="text-xs text-right font-semibold" style="color:${p>=70?'#166534':p>=50?'#854d0e':'#991b1b'}">${p}%</span>
+          </div>`);
+      }
+    }
+
+    // Simulados
+    const sl = document.getElementById('simulados-list')!;
+    if (!simulados.length) {
+      sl.innerHTML = `
+        <div class="flex flex-col items-center py-6 text-center gap-2">
+          <svg class="w-8 h-8 text-dark/20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <p class="text-sm text-dark/40">Nenhum simulado realizado ainda.</p>
+          <a href="/simulado" class="text-xs font-medium text-dark underline underline-offset-2">Fazer simulado →</a>
+        </div>`;
+    } else {
+      sl.innerHTML = '';
+      for (const s of simulados.slice(0, 5)) {
+        const p   = s.total ? Math.round((s.acertos / s.total) * 100) : 0;
+        const dur = s.duration_s ? `${Math.floor(s.duration_s/60)}m` : '—';
+        const badge = p >= 70
+          ? 'background:#b9ff66;color:#166534'
+          : p >= 50
+          ? 'background:#fde68a;color:#854d0e'
+          : 'background:#fee2e2;color:#991b1b';
+        sl.insertAdjacentHTML('beforeend', `
+          <div class="flex items-center justify-between py-2.5 border-b border-dark/8 last:border-0">
+            <div>
+              <p class="text-sm font-medium text-dark">${s.disc || 'Misto'}</p>
+              <p class="text-xs text-dark/40">${new Date(s.created_at).toLocaleDateString('pt-BR')} · ${dur}</p>
+            </div>
+            <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="${badge}">${p}%</span>
+          </div>`);
+      }
+    }
+  }
+
+  loadStats();
+</script>

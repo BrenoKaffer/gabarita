@@ -1,0 +1,388 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+<MainLayout title="Simulado">
+<style>
+  .config-opt {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 14px 10px; border-radius: 12px; border: 1.5px solid rgba(25,26,35,0.15);
+    background: white; cursor: pointer; transition: all 0.15s; gap: 2px;
+  }
+  .config-opt:hover { border-color: #191a23; }
+  .config-opt.active { background: #191a23; border-color: #191a23; color: white; }
+  .config-opt .opt-val { font-size: 1.1rem; font-weight: 700; }
+  .config-opt .opt-label { font-size: 0.65rem; opacity: 0.6; }
+  .config-opt.active .opt-label { opacity: 0.7; }
+
+</style>
+
+<!-- ── Config ── -->
+<div id="config-panel">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold">Novo <span class="greenhead">Simulado</span></h1>
+    <p class="text-xs text-dark/40 mt-0.5">Configure e comece</p>
+  </div>
+
+  <div class="max-w-lg flex flex-col gap-6">
+
+    <!-- Disciplina -->
+    <div>
+      <label class="text-sm font-semibold text-dark mb-2 block">Disciplina</label>
+      <select id="sim-disc" class="input text-sm">
+        <option value="">Misto (todas)</option>
+      </select>
+    </div>
+
+    <!-- Quantidade -->
+    <div>
+      <label class="text-sm font-semibold text-dark mb-2 block">Questões</label>
+      <div class="grid grid-cols-5 gap-2">
+        <button class="config-opt" data-count="10"><span class="opt-val">10</span><span class="opt-label">questões</span></button>
+        <button class="config-opt active" data-count="20"><span class="opt-val">20</span><span class="opt-label">questões</span></button>
+        <button class="config-opt" data-count="30"><span class="opt-val">30</span><span class="opt-label">questões</span></button>
+        <button class="config-opt" data-count="40"><span class="opt-val">40</span><span class="opt-label">questões</span></button>
+        <button class="config-opt" data-count="50"><span class="opt-val">50</span><span class="opt-label">questões</span></button>
+      </div>
+    </div>
+
+    <!-- Tempo -->
+    <div>
+      <label class="text-sm font-semibold text-dark mb-2 block">Tempo limite</label>
+      <div class="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        <button class="config-opt" data-time="0"><span class="opt-val">∞</span><span class="opt-label">sem limite</span></button>
+        <button class="config-opt" data-time="30"><span class="opt-val">30</span><span class="opt-label">minutos</span></button>
+        <button class="config-opt active" data-time="60"><span class="opt-val">1h</span><span class="opt-label">60 min</span></button>
+        <button class="config-opt" data-time="90"><span class="opt-val">1h30</span><span class="opt-label">90 min</span></button>
+        <button class="config-opt" data-time="120"><span class="opt-val">2h</span><span class="opt-label">120 min</span></button>
+        <button class="config-opt" data-time="180"><span class="opt-val">3h</span><span class="opt-label">180 min</span></button>
+      </div>
+    </div>
+
+    <button id="btn-start-sim" class="btn-primary text-sm px-6 py-3 self-start">
+      Começar simulado →
+    </button>
+  </div>
+</div>
+
+<!-- ── Simulado ── -->
+<div id="sim-panel" class="hidden">
+  <!-- Header do simulado -->
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+    <div>
+      <h1 class="text-xl font-semibold">Simulado</h1>
+      <p id="sim-disc-label" class="text-xs text-dark/40 mt-0.5"></p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="timer-wrap" class="hidden card px-4 py-2 shadow-none flex items-center gap-2">
+        <svg class="w-4 h-4 text-dark/50" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span id="timer" class="font-semibold text-dark tabular-nums">60:00</span>
+      </div>
+      <span id="sim-counter" class="text-sm font-medium text-dark/50"></span>
+    </div>
+  </div>
+
+  <!-- Barra de navegação das questões -->
+  <div id="q-nav-bar" class="flex flex-wrap gap-1.5 mb-4"></div>
+
+  <!-- Progress bar -->
+  <div class="h-1 rounded-full bg-dark/8 mb-5 overflow-hidden">
+    <div id="sim-prog" class="h-full bg-green rounded-full transition-all" style="width:0%"></div>
+  </div>
+
+  <!-- Questão -->
+  <div id="sim-question" class="mb-4"></div>
+
+  <!-- Nav -->
+  <div class="flex gap-3">
+    <button id="sim-prev" class="btn-secondary text-sm px-4 py-2.5" disabled>← Anterior</button>
+    <button id="sim-next" class="btn-primary text-sm px-4 py-2.5 ml-auto">Próxima →</button>
+    <button id="sim-finish" class="btn-green text-sm px-4 py-2.5 hidden">Finalizar ✓</button>
+  </div>
+</div>
+
+<!-- ── Resultado ── -->
+<div id="result-panel" class="hidden">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold">Resultado do <span class="greenhead">Simulado</span></h1>
+  </div>
+
+  <!-- Score principal -->
+  <div class="card mb-5" style="background:#191a23">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <div>
+        <div class="text-5xl font-semibold text-white mb-1" id="res-pct">—%</div>
+        <div class="text-white/50 text-sm" id="res-score"></div>
+        <div class="text-white/35 text-xs mt-1" id="res-time"></div>
+      </div>
+      <div id="res-medal" class="text-6xl"></div>
+    </div>
+  </div>
+
+  <!-- Por disciplina (se misto) -->
+  <div id="res-breakdown" class="card mb-5 hidden">
+    <h2 class="text-base font-semibold mb-4">Por disciplina</h2>
+    <div id="res-breakdown-rows"></div>
+  </div>
+
+  <!-- Questões respondidas / puladas -->
+  <div class="card mb-5">
+    <div class="grid grid-cols-3 gap-4 text-center">
+      <div>
+        <div class="text-2xl font-semibold text-dark" id="res-respondidas">—</div>
+        <div class="text-xs text-dark/50 mt-0.5">Respondidas</div>
+      </div>
+      <div>
+        <div class="text-2xl font-semibold text-dark" id="res-acertos">—</div>
+        <div class="text-xs text-dark/50 mt-0.5">Acertos</div>
+      </div>
+      <div>
+        <div class="text-2xl font-semibold text-dark" id="res-puladas">—</div>
+        <div class="text-xs text-dark/50 mt-0.5">Puladas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex gap-3">
+    <button onclick="location.reload()" class="btn-primary text-sm px-5 py-2.5">Novo simulado</button>
+    <a href="/stats" class="btn-secondary text-sm px-5 py-2.5">Ver estatísticas</a>
+  </div>
+</div>
+</MainLayout>
+
+<script>
+const token = localStorage.getItem('gab_token');
+let allQuestions: any[] = [];
+let simQuestions: any[] = [];
+let simAnswers: Record<number, string> = {};
+let simIdx    = 0;
+let elapsed   = 0;
+let timeLimit = 60 * 60; // default 1h em segundos
+let startTime = 0;
+let timerInterval: any = null;
+let simCount  = 20;
+
+// ── Opções de config ──
+document.querySelectorAll('[data-count]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-count]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    simCount = parseInt((btn as HTMLElement).dataset.count || '20');
+  });
+});
+document.querySelectorAll('[data-time]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-time]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    timeLimit = parseInt((btn as HTMLElement).dataset.time || '60') * 60;
+  });
+});
+
+async function loadQuestions() {
+  allQuestions = await fetch('/questions.json').then(r => r.json());
+  const DISC_NAMES: Record<string, string> = {
+    '':      'Misto (todas)',
+    'ADM':   'Administração Pública',
+    'ARQ':   'Arquivologia',
+    'ATEND': 'Atendimento ao Público',
+    'DADM':  'Direito Administrativo',
+    'ETICA': 'Ética no Serviço Público',
+    'INFO':  'Informática',
+    'LGPD':  'LGPD / Proteção de Dados',
+    'LIC':   'Licitações e Contratos',
+    'LOG':   'Raciocínio Lógico',
+    'LP':    'Língua Portuguesa',
+    'ORC':   'Orçamento Público',
+    'PROC':  'Gestão de Processos',
+    'RED':   'Redação Oficial',
+  };
+  const discs = [...new Set<string>(allQuestions.map((q: any) => q.disc))].filter(Boolean).sort();
+  const sel   = document.getElementById('sim-disc') as HTMLSelectElement;
+  for (const d of discs) {
+    const label = DISC_NAMES[d] ?? d;
+    sel.insertAdjacentHTML('beforeend', `<option value="${d}">${label}</option>`);
+  }
+}
+
+function shuffle(arr: any[]) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+document.getElementById('btn-start-sim')!.addEventListener('click', () => {
+  const disc = (document.getElementById('sim-disc') as HTMLSelectElement).value;
+  const pool = disc ? allQuestions.filter((q: any) => q.disc === disc) : allQuestions;
+  simQuestions = shuffle(pool).slice(0, simCount);
+  simAnswers   = {};
+  simIdx       = 0;
+  startTime    = Date.now();
+
+  document.getElementById('config-panel')!.classList.add('hidden');
+  document.getElementById('sim-panel')!.classList.remove('hidden');
+
+  const label = document.getElementById('sim-disc-label')!;
+  label.textContent = `${disc || 'Misto'} · ${simQuestions.length} questões`;
+
+  buildNavBar();
+  renderSim();
+  if (timeLimit > 0) {
+    document.getElementById('timer-wrap')!.classList.remove('hidden');
+    document.getElementById('timer-wrap')!.classList.add('flex');
+    startTimer();
+  }
+});
+
+function buildNavBar() {
+  const bar = document.getElementById('q-nav-bar')!;
+  bar.innerHTML = '';
+  simQuestions.forEach((_, i) => {
+    const btn = document.createElement('button');
+    btn.id = `qnav-${i}`;
+    btn.className = 'w-7 h-7 rounded text-xs font-semibold border border-dark/20 bg-white text-dark/40 transition-all';
+    btn.textContent = String(i + 1);
+    btn.addEventListener('click', () => { simIdx = i; renderSim(); });
+    bar.appendChild(btn);
+  });
+}
+
+function updateNavBar() {
+  simQuestions.forEach((_, i) => {
+    const btn = document.getElementById(`qnav-${i}`);
+    if (!btn) return;
+    btn.className = 'w-7 h-7 rounded text-xs font-semibold border transition-all ';
+    if (i === simIdx) {
+      btn.className += 'border-dark bg-dark text-green';
+    } else if (simAnswers[i]) {
+      btn.className += 'border-green bg-green text-dark';
+    } else {
+      btn.className += 'border-dark/20 bg-white text-dark/40';
+    }
+  });
+}
+
+function startTimer() {
+  const el = document.getElementById('timer')!;
+  timerInterval = setInterval(() => {
+    elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const remaining = timeLimit - elapsed;
+    if (remaining <= 0) { clearInterval(timerInterval); finishSim(); return; }
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    if (remaining <= 300) el.classList.add('text-red-600');
+  }, 1000);
+}
+
+function renderSim() {
+  const q      = simQuestions[simIdx];
+  const chosen = simAnswers[simIdx];
+  const total  = simQuestions.length;
+
+  document.getElementById('sim-counter')!.textContent = `${simIdx + 1} / ${total}`;
+  document.getElementById('sim-prog')!.style.width =
+    `${(Object.keys(simAnswers).length / total) * 100}%`;
+  (document.getElementById('sim-prev') as HTMLButtonElement).disabled = simIdx === 0;
+
+  const isLast = simIdx === total - 1;
+  document.getElementById('sim-next')!.classList.toggle('hidden', isLast);
+  document.getElementById('sim-finish')!.classList.toggle('hidden', !isLast);
+
+  const metaParts = [
+    q.ano   ? `Ano: <strong>${q.ano}</strong>`     : '',
+    q.banca ? `Banca: <strong>${q.banca}</strong>` : '',
+  ].filter(Boolean).join('<span class="mx-2 opacity-30">·</span>');
+
+  const altsHtml = q.a.map((alt: any) => `
+    <button class="alt-opt ${chosen === alt.l ? 'selected' : ''}" data-alt="${alt.l}">
+      <span class="alt-letter">${alt.l}</span>
+      <span class="alt-text">${alt.t}</span>
+    </button>`).join('');
+
+  document.getElementById('sim-question')!.innerHTML = `
+    <div class="q-card">
+      <div class="q-header">
+        <span style="font-size:0.75rem;font-weight:700;color:rgba(25,26,35,0.3)">${simIdx + 1}</span>
+        <span style="font-size:0.7rem;font-family:monospace;background:rgba(25,26,35,0.08);padding:2px 6px;border-radius:4px;color:rgba(25,26,35,0.5)">${q.id}</span>
+        <span style="font-size:0.75rem;color:rgba(25,26,35,0.5)"><strong style="color:rgba(25,26,35,0.8)">${q.disc}</strong></span>
+      </div>
+      ${metaParts ? `<div style="padding:8px 16px 0;display:flex;gap:16px;flex-wrap:wrap"><span style="font-size:0.72rem;color:rgba(25,26,35,0.4)">${metaParts}</span></div>` : ''}
+      <div style="padding:14px 16px 10px">
+        <p style="line-height:1.65;color:#191a23;font-size:15px">${q.e}</p>
+      </div>
+      <div id="sim-alts" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:8px">
+        ${altsHtml}
+      </div>
+    </div>`;
+
+  document.querySelectorAll('#sim-alts .alt-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      simAnswers[simIdx] = (btn as HTMLElement).dataset.alt || '';
+      updateNavBar();
+      renderSim();
+    });
+  });
+
+  updateNavBar();
+}
+
+async function finishSim() {
+  clearInterval(timerInterval);
+  elapsed = Math.floor((Date.now() - startTime) / 1000);
+
+  document.getElementById('sim-panel')!.classList.add('hidden');
+  document.getElementById('result-panel')!.classList.remove('hidden');
+
+  const answers = simQuestions.map((q, i) => ({ question_id: q.id, chosen: simAnswers[i] || '' }));
+  const disc    = (document.getElementById('sim-disc') as HTMLSelectElement)?.value || '';
+
+  const res  = await fetch('/api/progress/simulado', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ disc, total: simQuestions.length, acertos: 0, duration_s: elapsed, answers }),
+  });
+  const data = await res.json();
+
+  const responded = answers.filter(a => a.chosen).length;
+  const skipped   = answers.length - responded;
+  const acertos   = data.acertos ?? 0;
+  const pct       = responded ? Math.round((acertos / simQuestions.length) * 100) : 0;
+  const mins = Math.floor(elapsed / 60), secs = elapsed % 60;
+
+  document.getElementById('res-pct')!.textContent   = pct + '%';
+  document.getElementById('res-score')!.textContent = `${acertos} de ${simQuestions.length} corretas`;
+  document.getElementById('res-time')!.textContent  = `Tempo: ${mins}m${secs.toString().padStart(2,'0')}s`;
+  document.getElementById('res-respondidas')!.textContent = String(responded);
+  document.getElementById('res-acertos')!.textContent     = String(acertos);
+  document.getElementById('res-puladas')!.textContent     = String(skipped);
+  document.getElementById('res-medal')!.textContent =
+    pct >= 70 ? '🏆' : pct >= 50 ? '📈' : '💪';
+
+  // Breakdown por disciplina
+  if (!disc && data.byDisc?.length) {
+    const bd = document.getElementById('res-breakdown')!;
+    const rows = document.getElementById('res-breakdown-rows')!;
+    bd.classList.remove('hidden');
+    for (const { d, acertos: ac, total: tot } of data.byDisc) {
+      const p  = tot ? Math.round((ac / tot) * 100) : 0;
+      const bg = p >= 70 ? '#b9ff66' : (p >= 50 ? '#fde68a' : '#fee2e2');
+      const fg = p >= 70 ? '#166534' : (p >= 50 ? '#854d0e' : '#991b1b');
+      rows.insertAdjacentHTML('beforeend', `
+        <div class="res-disc-row">
+          <span class="text-sm font-medium text-dark">${d}</span>
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:${bg};color:${fg}">${ac}/${tot} — ${p}%</span>
+        </div>`);
+    }
+  }
+}
+
+document.getElementById('sim-next')?.addEventListener('click', () => { simIdx++; renderSim(); });
+document.getElementById('sim-prev')?.addEventListener('click', () => { simIdx--; renderSim(); });
+document.getElementById('sim-finish')?.addEventListener('click', finishSim);
+
+loadQuestions();
+</script>
