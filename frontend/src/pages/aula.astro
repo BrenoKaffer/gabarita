@@ -536,6 +536,8 @@ import MainLayout from '../layouts/MainLayout.astro';
   async function doSave() {
     const statusEl = document.getElementById('save-status')!;
     statusEl.textContent = 'Salvando…';
+    // O contorno de seleção da imagem é só um estado visual temporário — não deve ser salvo
+    quill.root.querySelectorAll('img.img-selected').forEach((img: Element) => img.classList.remove('img-selected'));
     const conteudo = quill.root.innerHTML;
     const res = await fetch(`/api/cursos/aulas/${aid}`, {
       method: 'PUT',
