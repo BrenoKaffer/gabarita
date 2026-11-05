@@ -238,15 +238,34 @@ import MainLayout from '../layouts/MainLayout.astro';
     });
   }
 
-  document.getElementById('img-input')!.addEventListener('change', async (e) => {
-    const input = e.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
+  async function insertImageFile(file: File) {
     const dataUrl = await compressImage(file);
     const range = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
     quill.insertEmbed(range.index, 'image', dataUrl, 'user');
     quill.setSelection(range.index + 1, 0, 'silent');
+  }
+
+  document.getElementById('img-input')!.addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (file) await insertImageFile(file);
+  });
+
+  // Colar imagem do clipboard (print, cópia de arquivo etc.) — o clipboard
+  // module do Quill só trata HTML/texto colado, não arquivos de imagem.
+  document.getElementById('editor')!.addEventListener('paste', async (e: ClipboardEvent) => {
+    if (locked) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) await insertImageFile(file);
+        break;
+      }
+    }
   });
 
   // ── Largura do texto: centralizado (padrão) ou total, como no Notion ──
