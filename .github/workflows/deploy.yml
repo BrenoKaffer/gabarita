@@ -14,11 +14,16 @@ jobs:
           host: 18.223.196.61
           username: admin
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          env: DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
           script: |
             cd /home/admin/gabarita-repo
             git pull
             cp -r frontend/dist/* /home/admin/gabarita/frontend/dist/
             mkdir -p /home/admin/gabarita/backend/src/routes /home/admin/gabarita/backend/src/db /home/admin/gabarita/backend/src/middleware
             cp -r backend/src/* /home/admin/gabarita/backend/src/
+            cp backend/package.json /home/admin/gabarita/backend/
+            cd /home/admin/gabarita/backend && npm install --omit=dev --silent
+            echo "DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY" > /home/admin/gabarita/backend/.env
+            cd /home/admin/gabarita-repo
             pm2 restart gabarita --update-env
             echo "Deploy OK - $(date)"
