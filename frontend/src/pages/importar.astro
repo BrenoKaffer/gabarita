@@ -1,0 +1,388 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+<MainLayout title="Importar Questões">
+
+<style>
+  /* Drop zone */
+  .drop-zone {
+    border: 2px dashed rgba(25,26,35,0.2);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: #b9ff66;
+    background: rgba(185,255,102,0.06);
+  }
+  .drop-zone input { display: none; }
+
+  /* Preview table */
+  .preview-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+  .preview-table th {
+    background: rgba(25,26,35,0.04); padding: 8px 12px;
+    text-align: left; border-bottom: 1.5px solid rgba(25,26,35,0.1);
+    font-weight: 600; font-size: 0.72rem; text-transform: uppercase;
+    letter-spacing: 0.04em; color: rgba(25,26,35,0.5);
+  }
+  .preview-table td {
+    padding: 9px 12px; border-bottom: 1px solid rgba(25,26,35,0.06);
+    vertical-align: top;
+  }
+  .preview-table tr:last-child td { border-bottom: none; }
+  .preview-table tr:hover td { background: rgba(25,26,35,0.02); }
+
+  /* Status badges */
+  .badge-ok   { background: rgba(185,255,102,0.3); color: #2d6a00; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+  .badge-err  { background: rgba(239,68,68,0.12); color: #b91c1c; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+  .badge-dup  { background: rgba(245,158,11,0.15); color: #92400e; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+
+  /* Summary row */
+  .summary-row {
+    display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+    padding: 1rem 1.25rem;
+    background: rgba(25,26,35,0.03);
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+  }
+  .sum-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; }
+  .sum-num  { font-weight: 700; font-size: 1.125rem; }
+
+  /* Error list */
+  .err-item {
+    display: flex; gap: 0.75rem; align-items: flex-start;
+    padding: 0.6rem 1rem; background: rgba(239,68,68,0.04);
+    border: 1px solid rgba(239,68,68,0.12); border-radius: 10px;
+    font-size: 0.8rem; color: #b91c1c;
+  }
+  .err-item code { font-family: monospace; font-size: 0.75rem; background: rgba(239,68,68,0.08); padding: 1px 5px; border-radius: 4px; }
+
+  /* Progress overlay */
+  #import-progress {
+    position: fixed; inset: 0; background: rgba(25,26,35,0.5);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+  }
+  .progress-card {
+    background: white; border-radius: 20px; padding: 2rem 2.5rem;
+    text-align: center; min-width: 260px;
+    border: 1.5px solid #191a23; box-shadow: 0 8px 0 #191a23;
+  }
+</style>
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-semibold">Importar Questões</h1>
+    <p class="text-dark/45 text-sm mt-0.5">Carregue um JSON com questões para adicionar ao banco</p>
+  </div>
+  <a href="/study" class="btn-secondary text-sm py-2 px-4">Ver Banco</a>
+</div>
+
+<!-- Schema hint -->
+<details class="mb-5 rounded-xl border border-dark/10 overflow-hidden">
+  <summary class="px-4 py-3 cursor-pointer text-sm font-medium text-dark/60 hover:text-dark hover:bg-dark/02 transition-colors select-none">
+    Formato do JSON esperado
+  </summary>
+  <div class="px-4 pb-4 pt-2">
+    <pre class="bg-dark text-green text-xs rounded-xl p-4 overflow-x-auto leading-relaxed"><code>{`{
+  "versao": "1.0",
+  "disciplina": "Raciocínio Lógico",
+  "questoes": [
+    {
+      "id": "rl_001",
+      "banca": "CEBRASPE",
+      "ano": 2024,
+      "subtopico": "Tabela Verdade",
+      "dificuldade": "facil | medio | dificil",
+      "enunciado": "Texto da questão...",
+      "alternativas": {
+        "a": "Primeira alternativa",
+        "b": "Segunda alternativa",
+        "c": "Terceira alternativa",
+        "d": "Quarta alternativa"
+      },
+      "gabarito": "b",
+      "explicacao": "Opcional: explicação da resposta"
+    }
+  ]
+}`}</code></pre>
+  </div>
+</details>
+
+<!-- Drop zone -->
+<div id="drop-zone" class="drop-zone mb-6">
+  <input type="file" id="file-input" accept=".json" />
+  <div id="dz-content">
+    <div class="w-14 h-14 bg-dark/06 rounded-2xl flex items-center justify-center mx-auto mb-3">
+      <svg class="w-7 h-7 text-dark/35" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+    </div>
+    <p class="font-medium text-dark/70 mb-1">Arraste o arquivo JSON aqui</p>
+    <p class="text-sm text-dark/40 mb-3">ou</p>
+    <button id="dz-btn" class="btn-secondary text-sm py-2 px-5">Selecionar arquivo</button>
+  </div>
+</div>
+
+<!-- Results (hidden until file loaded) -->
+<div id="results" class="hidden">
+
+  <!-- Summary -->
+  <div class="summary-row" id="summary-row"></div>
+
+  <!-- Errors -->
+  <div id="errors-section" class="hidden mb-5">
+    <h3 class="text-sm font-semibold mb-2 text-red-500">Erros encontrados</h3>
+    <div id="errors-list" class="flex flex-col gap-2"></div>
+  </div>
+
+  <!-- Preview table -->
+  <div id="preview-section" class="hidden">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-sm font-semibold text-dark/70">Preview das questões válidas</h3>
+      <span id="preview-count" class="text-xs text-dark/40"></span>
+    </div>
+    <div class="card overflow-hidden p-0 mb-5">
+      <div class="overflow-x-auto">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Disciplina</th>
+              <th>Banca</th>
+              <th>Dificuldade</th>
+              <th>Enunciado</th>
+              <th>Gabarito</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="preview-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div id="action-row" class="hidden flex gap-3">
+    <button id="btn-reset" class="btn-secondary">Cancelar</button>
+    <button id="btn-confirm" class="btn-primary flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+      </svg>
+      <span id="btn-confirm-label">Importar questões</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- Progress overlay (hidden) -->
+<div id="import-progress" class="hidden">
+  <div class="progress-card">
+    <div class="w-10 h-10 border-4 border-green border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+    <p class="font-semibold text-dark mb-1">Importando…</p>
+    <p id="prog-label" class="text-sm text-dark/45">Aguarde</p>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('gab_token');
+  if (!token) location.href = '/login';
+
+  const dropZone  = document.getElementById('drop-zone')!;
+  const fileInput = document.getElementById('file-input') as HTMLInputElement;
+  const dzBtn     = document.getElementById('dz-btn')!;
+  const results   = document.getElementById('results')!;
+
+  let validQuestoes: any[] = [];
+
+  // ── Drop zone interactions ──
+  dzBtn.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('click', e => { if (e.target !== dzBtn) fileInput.click(); });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer?.files[0];
+    if (file) processFile(file);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files?.[0]) processFile(fileInput.files[0]);
+  });
+
+  // ── File processing ──
+  function processFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const json = JSON.parse(e.target?.result as string);
+        validateAndRender(json, file.name);
+      } catch {
+        alert('Arquivo JSON inválido. Verifique a sintaxe.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function validateAndRender(json: any, filename: string) {
+    const rawList: any[] = Array.isArray(json) ? json : json.questoes ?? [];
+    const defaultDisc: string = json.disciplina || '';
+
+    const errors: { idx: number; id?: string; msg: string }[] = [];
+    const valid: any[] = [];
+    const idsInBatch = new Set<string>();
+    let dupCount = 0;
+
+    for (let i = 0; i < rawList.length; i++) {
+      const q = rawList[i];
+      const errs: string[] = [];
+
+      if (!q.id || typeof q.id !== 'string' || !q.id.trim()) errs.push('id ausente ou inválido');
+      if (!q.enunciado || !q.enunciado.trim()) errs.push('enunciado vazio');
+      if (!q.alternativas || typeof q.alternativas !== 'object') errs.push('alternativas ausentes');
+      else {
+        const keys = Object.keys(q.alternativas);
+        if (keys.length < 2) errs.push('mínimo 2 alternativas');
+        if (!keys.includes(q.gabarito)) errs.push(`gabarito "${q.gabarito}" não corresponde a nenhuma alternativa`);
+      }
+      if (!q.gabarito) errs.push('gabarito ausente');
+
+      if (errs.length) {
+        errors.push({ idx: i + 1, id: q.id, msg: errs.join(' · ') });
+        continue;
+      }
+
+      if (idsInBatch.has(q.id)) {
+        dupCount++;
+        errors.push({ idx: i + 1, id: q.id, msg: 'ID duplicado neste arquivo' });
+        continue;
+      }
+      idsInBatch.add(q.id);
+
+      valid.push({
+        ...q,
+        disciplina: q.disciplina || defaultDisc || '',
+        dificuldade: q.dificuldade || 'medio',
+      });
+    }
+
+    validQuestoes = valid;
+    renderResults(rawList.length, valid.length, errors, filename);
+  }
+
+  function renderResults(total: number, validCount: number, errors: any[], filename: string) {
+    results.classList.remove('hidden');
+
+    // Update drop zone label
+    document.getElementById('dz-content')!.innerHTML = `
+      <div class="flex items-center justify-center gap-2 text-sm text-dark/55">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <span class="font-medium">${filename}</span>
+        <button id="dz-change" class="underline text-dark/40 hover:text-dark ml-2 text-xs">trocar</button>
+      </div>`;
+    document.getElementById('dz-change')?.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
+
+    // Summary
+    document.getElementById('summary-row')!.innerHTML = `
+      <div class="sum-item"><span class="sum-num">${total}</span><span class="text-dark/50">no arquivo</span></div>
+      <div class="w-px h-8 bg-dark/10"></div>
+      <div class="sum-item text-green-700"><span class="sum-num text-green-700">${validCount}</span><span class="text-dark/50">válidas</span></div>
+      ${errors.length ? `<div class="w-px h-8 bg-dark/10"></div><div class="sum-item text-red-500"><span class="sum-num text-red-500">${errors.length}</span><span class="text-dark/50">com erro</span></div>` : ''}`;
+
+    // Errors
+    const errSec = document.getElementById('errors-section')!;
+    if (errors.length) {
+      errSec.classList.remove('hidden');
+      document.getElementById('errors-list')!.innerHTML = errors.map(e =>
+        `<div class="err-item">
+          <span class="shrink-0 font-semibold">#${e.idx}</span>
+          ${e.id ? `<code>${e.id}</code>` : ''}
+          <span>${e.msg}</span>
+        </div>`
+      ).join('');
+    } else {
+      errSec.classList.add('hidden');
+    }
+
+    // Preview table
+    const prevSec = document.getElementById('preview-section')!;
+    if (validCount > 0) {
+      prevSec.classList.remove('hidden');
+      const shown = validQuestoes.slice(0, 20);
+      document.getElementById('preview-count')!.textContent =
+        validQuestoes.length > 20 ? `Mostrando 20 de ${validCount}` : `${validCount} questões`;
+      document.getElementById('preview-body')!.innerHTML = shown.map(q => {
+        const dif: Record<string, string> = { facil: 'Fácil', medio: 'Médio', dificil: 'Difícil' };
+        return `<tr>
+          <td class="font-mono text-xs text-dark/60">${q.id}</td>
+          <td>${q.disciplina || '<span class="text-dark/30">—</span>'}</td>
+          <td>${q.banca || '<span class="text-dark/30">—</span>'}</td>
+          <td>${dif[q.dificuldade] || q.dificuldade || '—'}</td>
+          <td class="max-w-xs" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">${q.enunciado.slice(0, 90)}${q.enunciado.length > 90 ? '…' : ''}</td>
+          <td class="font-bold uppercase text-center">${q.gabarito}</td>
+          <td><span class="badge-ok">✓ OK</span></td>
+        </tr>`;
+      }).join('');
+    } else {
+      prevSec.classList.add('hidden');
+    }
+
+    // Action row
+    const actRow = document.getElementById('action-row')!;
+    if (validCount > 0) {
+      actRow.classList.remove('hidden');
+      (document.getElementById('btn-confirm-label') as HTMLElement).textContent =
+        `Importar ${validCount} questão${validCount !== 1 ? 'ões' : ''}`;
+    } else {
+      actRow.classList.add('hidden');
+    }
+  }
+
+  // ── Confirm import ──
+  document.getElementById('btn-confirm')!.addEventListener('click', async () => {
+    if (!validQuestoes.length) return;
+
+    const overlay = document.getElementById('import-progress')!;
+    overlay.classList.remove('hidden');
+    document.getElementById('prog-label')!.textContent = `Enviando ${validQuestoes.length} questões…`;
+
+    const res = await fetch('/api/questoes/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ questoes: validQuestoes }),
+    });
+
+    overlay.classList.add('hidden');
+
+    if (res.ok) {
+      const { imported } = await res.json();
+      // Show success
+      results.innerHTML = `
+        <div class="flex flex-col items-center py-16 text-center">
+          <div class="w-16 h-16 bg-green rounded-2xl flex items-center justify-center mb-4 border-2 border-dark shadow-[0_4px_0_#191a23]">
+            <svg class="w-8 h-8" fill="none" stroke="#191a23" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <h2 class="text-xl font-semibold mb-1">${imported} questão${imported !== 1 ? 'ões' : ''} importada${imported !== 1 ? 's' : ''}!</h2>
+          <p class="text-dark/45 text-sm mb-6">Agora disponíveis na revisão e simulado.</p>
+          <div class="flex gap-3">
+            <a href="/study" class="btn-primary">Ir para Revisão</a>
+            <button onclick="location.reload()" class="btn-secondary">Importar mais</button>
+          </div>
+        </div>`;
+    } else {
+      alert('Erro ao importar. Tente novamente.');
+    }
+  });
+
+  // ── Reset ──
+  document.getElementById('btn-reset')!.addEventListener('click', () => location.reload());
+</script>
+</MainLayout>

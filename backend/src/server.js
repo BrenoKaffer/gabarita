@@ -7,6 +7,7 @@ import progressRouter from './routes/progress.js';
 import statsRouter from './routes/stats.js';
 import cursosRouter from './routes/cursos.js';
 import concursosRouter from './routes/concursos.js';
+import questoesRouter from './routes/questoes.js';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const STATIC = join(__dir, '..', '..', 'frontend', 'dist');
@@ -21,6 +22,7 @@ app.use('/api/progress', progressRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/cursos', cursosRouter);
 app.use('/api/concursos', concursosRouter);
+app.use('/api/questoes', questoesRouter);
 
 // Serve Astro build (produção)
 app.use(express.static(STATIC));

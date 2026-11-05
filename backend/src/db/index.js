@@ -91,6 +91,20 @@ db.exec(`
     concluida INTEGER DEFAULT 0,
     PRIMARY KEY (user_id, aula_id)
   );
+
+  CREATE TABLE IF NOT EXISTS questoes (
+    id           TEXT PRIMARY KEY,
+    banca        TEXT,
+    ano          INTEGER,
+    disciplina   TEXT,
+    subtopico    TEXT,
+    dificuldade  TEXT DEFAULT 'medio',
+    enunciado    TEXT NOT NULL,
+    alternativas TEXT NOT NULL,
+    gabarito     TEXT NOT NULL,
+    explicacao   TEXT,
+    importado_em TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 // Seed concursos se vazio

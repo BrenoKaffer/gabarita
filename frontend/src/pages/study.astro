@@ -99,12 +99,18 @@ let fontSize = parseInt(localStorage.getItem('gab_fontsize') || '15');
 
 // ── Init ──
 async function init() {
-  const [qRes, ansRes, favRes] = await Promise.all([
+  const [qRes, dbRes, ansRes, favRes] = await Promise.all([
     fetch('/questions.json'),
+    fetch('/api/questoes', { headers: { Authorization: `Bearer ${token}` } }),
     fetch('/api/progress/answered', { headers: { Authorization: `Bearer ${token}` } }),
     fetch('/api/progress/favorites', { headers: { Authorization: `Bearer ${token}` } }),
   ]);
-  questions = await qRes.json();
+  const staticQs = await qRes.json();
+  const dbQs: any[] = dbRes.ok ? await dbRes.json() : [];
+  // Merge: DB questions first so they appear at the top of their discipline
+  const staticIds = new Set(staticQs.map((q: any) => q.id));
+  const newDbQs = dbQs.filter((q: any) => !staticIds.has(q.id));
+  questions = [...newDbQs, ...staticQs];
   const ans  = await ansRes.json();
   const favs = await favRes.json();
 
