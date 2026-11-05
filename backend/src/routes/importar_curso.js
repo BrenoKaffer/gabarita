@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { PDFParse } from 'pdf-parse';
 import db from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -77,6 +76,7 @@ router.post('/pdf', upload.single('pdf'), async (req, res) => {
   if (!DEEPSEEK_KEY) return res.status(500).json({ error: 'DEEPSEEK_API_KEY não configurada' });
 
   try {
+    const { PDFParse } = await import('pdf-parse');
     const parser = new PDFParse({ data: req.file.buffer });
     const result = await parser.getText();
     const text = result.text;
