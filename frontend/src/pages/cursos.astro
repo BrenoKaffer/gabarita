@@ -57,9 +57,10 @@ import MainLayout from '../layouts/MainLayout.astro';
   /* Modal */
   .overlay {
     position: fixed; inset: 0; background: rgba(25,26,35,0.5);
-    display: flex; align-items: center; justify-content: center;
+    display: none; align-items: center; justify-content: center;
     z-index: 100; padding: 1rem;
   }
+  .overlay.show { display: flex; }
   .modal {
     background: white; border-radius: 20px; padding: 1.75rem;
     width: 100%; max-width: 440px;
@@ -113,7 +114,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 <div id="grid" class="courses-grid"></div>
 
 <!-- Modal -->
-<div id="overlay" class="overlay hidden">
+<div id="overlay" class="overlay">
   <div class="modal">
     <h2 class="text-lg font-semibold mb-4">Novo Curso</h2>
     <div class="flex flex-col gap-4">
@@ -207,14 +208,14 @@ import MainLayout from '../layouts/MainLayout.astro';
   const btnCancel = document.getElementById('btn-cancel')!;
   const btnCriar  = document.getElementById('btn-criar')!;
 
-  btnNovo.addEventListener('click', () => overlay.classList.remove('hidden'));
+  btnNovo.addEventListener('click', () => overlay.classList.add('show'));
   btnCancel.addEventListener('click', () => {
-    overlay.classList.add('hidden');
+    overlay.classList.remove('show');
     capaBase64 = null;
     (document.getElementById('capa-preview') as HTMLElement).style.display = 'none';
     (document.getElementById('upload-label') as HTMLElement).textContent = 'Clique ou arraste uma imagem';
   });
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.add('hidden'); });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('show'); });
 
   document.getElementById('color-picker')!.addEventListener('click', e => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('.color-dot');
