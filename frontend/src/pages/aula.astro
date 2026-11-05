@@ -54,6 +54,13 @@ import MainLayout from '../layouts/MainLayout.astro';
     break-inside: avoid;
   }
 
+  #editor .ql-editor img {
+    max-width: 100%;
+    border-radius: 10px;
+    margin: 0.5rem 0;
+    display: block;
+  }
+
   #btn-concluir.done {
     background: #b9ff66; color: #191a23; border-color: #191a23;
   }
@@ -172,10 +179,12 @@ import MainLayout from '../layouts/MainLayout.astro';
     </span>
     <span class="ql-formats">
       <button class="ql-link"></button>
+      <button class="ql-image" title="Inserir imagem"></button>
       <button class="ql-clean"></button>
     </span>
   </div>
   <div id="editor"></div>
+  <input type="file" id="img-input" accept="image/*" class="hidden" />
 </div>
 
 </div>
@@ -193,7 +202,12 @@ import MainLayout from '../layouts/MainLayout.astro';
   function initQuill() {
     quill = new (window as any).Quill('#editor', {
       theme: 'bubble',
-      modules: { toolbar: '#toolbar' },
+      modules: {
+        toolbar: {
+          container: '#toolbar',
+          handlers: { image: () => (document.getElementById('img-input') as HTMLInputElement).click() },
+        },
+      },
     });
     quill.disable();
     quill.on('text-change', (_delta: any, _old: any, source: string) => {
@@ -204,6 +218,36 @@ import MainLayout from '../layouts/MainLayout.astro';
     applyColumns();
     applySpacing();
   }
+
+  // ── Inserir imagem (upload + compressão client-side, como a capa do curso) ──
+  function compressImage(file: File): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1000;
+        let { width, height } = img;
+        if (width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.src = url;
+    });
+  }
+
+  document.getElementById('img-input')!.addEventListener('change', async (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const dataUrl = await compressImage(file);
+    const range = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
+    quill.insertEmbed(range.index, 'image', dataUrl, 'user');
+    quill.setSelection(range.index + 1, 0, 'silent');
+  });
 
   // ── Largura do texto: centralizado (padrão) ou total, como no Notion ──
   const btnWidth = document.getElementById('btn-width') as HTMLButtonElement;
