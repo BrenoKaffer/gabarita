@@ -18,4 +18,5 @@ jobs:
             cd /home/admin/gabarita-repo
             git pull
             cp -r frontend/dist/* /home/admin/gabarita/frontend/dist/
+            pm2 restart gabarita --update-env
             echo "Deploy OK - $(date)"
