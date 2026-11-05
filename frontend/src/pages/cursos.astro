@@ -10,79 +10,59 @@ import MainLayout from '../layouts/MainLayout.astro';
     gap: 1.25rem;
   }
   .course-card {
-    background: white;
-    border: 1.5px solid #191a23;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0px 4px 0px #191a23;
-    cursor: pointer;
-    text-decoration: none;
-    display: block;
-    transition: transform 0.15s;
+    background: white; border: 1.5px solid #191a23; border-radius: 20px;
+    overflow: hidden; box-shadow: 0px 4px 0px #191a23;
+    cursor: pointer; text-decoration: none; display: block; transition: transform 0.15s;
   }
   .course-card:hover { transform: translateY(-2px); }
   .card-top {
-    height: 120px;
-    display: flex; align-items: flex-end;
-    font-size: 1.5rem; font-weight: 700;
-    color: rgba(255,255,255,0.9); letter-spacing: -0.02em;
+    height: 120px; display: flex; align-items: flex-end;
     position: relative; overflow: hidden;
   }
-  .card-top-img {
-    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-  }
-  .card-top-overlay {
-    position: absolute; inset: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.5) 100%);
-  }
-  .card-top-label {
-    position: relative; padding: 0.6rem 0.875rem; font-size: 1.125rem; font-weight: 700; line-height: 1.2;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-  }
-  .card-top-initials {
-    position: relative; font-size: 1.75rem; font-weight: 700;
-    color: rgba(255,255,255,0.9); letter-spacing: -0.02em;
-  }
+  .card-top-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .card-top-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.5) 100%); }
+  .card-top-label { position: relative; padding: 0.6rem 0.875rem; font-size: 1.125rem; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 3px rgba(0,0,0,0.4); color: rgba(255,255,255,0.9); }
+  .card-top-initials { position: relative; font-size: 1.75rem; font-weight: 700; color: rgba(255,255,255,0.9); letter-spacing: -0.02em; }
   .card-body { padding: 0.875rem 1rem 1rem; }
   .card-title { font-size: 0.9375rem; font-weight: 600; color: #191a23; margin-bottom: 0.2rem; }
-  .card-desc {
-    font-size: 0.8125rem; color: rgba(25,26,35,0.45); line-height: 1.5;
-    margin-bottom: 0.75rem; min-height: 2.4em;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  }
+  .card-desc { font-size: 0.8125rem; color: rgba(25,26,35,0.45); line-height: 1.5; margin-bottom: 0.75rem; min-height: 2.4em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .card-meta { font-size: 0.72rem; color: rgba(25,26,35,0.35); margin-bottom: 0.6rem; }
   .prog-wrap { height: 4px; background: rgba(25,26,35,0.07); border-radius: 2px; overflow: hidden; }
   .prog-fill { height: 100%; background: #b9ff66; border-radius: 2px; transition: width 0.4s; }
 
   /* Modal */
-  .overlay {
-    position: fixed; inset: 0; background: rgba(25,26,35,0.5);
-    display: none; align-items: center; justify-content: center;
-    z-index: 100; padding: 1rem;
-  }
+  .overlay { position: fixed; inset: 0; background: rgba(25,26,35,0.5); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem; overflow-y: auto; }
   .overlay.show { display: flex; }
-  .modal {
-    background: white; border-radius: 20px; padding: 1.75rem;
-    width: 100%; max-width: 440px;
-    border: 1.5px solid #191a23; box-shadow: 0px 8px 0px #191a23;
-  }
-  .color-dot {
-    width: 24px; height: 24px; border-radius: 50%;
-    border: 2.5px solid transparent; cursor: pointer;
-    transition: transform 0.15s, border-color 0.15s; flex-shrink: 0;
-  }
+  .modal { background: white; border-radius: 20px; padding: 1.75rem; width: 100%; max-width: 440px; border: 1.5px solid #191a23; box-shadow: 0px 8px 0px #191a23; transition: max-width 0.25s; }
+  .modal.wide { max-width: 680px; }
+  .color-dot { width: 24px; height: 24px; border-radius: 50%; border: 2.5px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s; flex-shrink: 0; }
   .color-dot.sel { border-color: #191a23; transform: scale(1.18); }
-  .upload-zone {
-    border: 2px dashed rgba(25,26,35,0.15); border-radius: 14px;
-    padding: 1rem; text-align: center; cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .upload-zone:hover { border-color: rgba(25,26,35,0.35); background: rgba(25,26,35,0.02); }
-  .upload-zone.drag { border-color: #6366f1; background: rgba(99,102,241,0.04); }
-  .capa-preview {
-    height: 90px; border-radius: 10px; overflow: hidden; margin-bottom: 0.5rem; display: none;
-  }
+  .upload-zone { border: 2px dashed rgba(25,26,35,0.15); border-radius: 14px; padding: 1.25rem; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: #6366f1; background: rgba(99,102,241,0.04); }
+  .capa-preview { height: 90px; border-radius: 10px; overflow: hidden; margin-bottom: 0.5rem; display: none; }
   .capa-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Modo tabs */
+  .modo-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .modo-tab { flex: 1; padding: 0.6rem; border-radius: 12px; border: 1.5px solid rgba(25,26,35,0.12); font-size: 0.8rem; font-weight: 600; cursor: pointer; background: none; text-align: center; transition: all 0.15s; color: rgba(25,26,35,0.5); }
+  .modo-tab.active { border-color: #191a23; background: #191a23; color: #b9ff66; }
+  .modo-tab:hover:not(.active) { border-color: rgba(25,26,35,0.3); color: #191a23; }
+
+  /* Preview */
+  .preview-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+  .preview-mod { border: 1.5px solid rgba(25,26,35,0.1); border-radius: 12px; overflow: hidden; }
+  .preview-mod-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; background: rgba(25,26,35,0.02); }
+  .preview-mod-title { flex: 1; font-size: 0.875rem; font-weight: 600; border: none; background: none; outline: none; color: #191a23; }
+  .preview-mod-title:focus { background: rgba(25,26,35,0.04); border-radius: 6px; padding: 2px 4px; }
+  .preview-aula { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.75rem; border-top: 1px solid rgba(25,26,35,0.06); }
+  .preview-aula-title { flex: 1; font-size: 0.8125rem; border: none; background: none; outline: none; color: rgba(25,26,35,0.7); }
+  .preview-aula-title:focus { background: rgba(25,26,35,0.04); border-radius: 6px; padding: 2px 4px; color: #191a23; }
+  .del-btn { padding: 3px; border-radius: 6px; background: none; border: none; cursor: pointer; color: rgba(25,26,35,0.2); transition: all 0.1s; flex-shrink: 0; }
+  .del-btn:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+
+  /* Loading spinner */
+  .spinner { width: 32px; height: 32px; border: 3px solid rgba(25,26,35,0.1); border-top-color: #191a23; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <!-- Header -->
@@ -115,46 +95,134 @@ import MainLayout from '../layouts/MainLayout.astro';
 
 <!-- Modal -->
 <div id="overlay" class="overlay">
-  <div class="modal">
-    <h2 class="text-lg font-semibold mb-4">Novo Curso</h2>
-    <div class="flex flex-col gap-4">
-      <div>
-        <label class="text-sm font-medium mb-1.5 block">Título <span class="text-red-400">*</span></label>
-        <input id="inp-titulo" type="text" class="input" placeholder="Ex: Raciocínio Lógico do Zero" />
+  <div class="modal" id="modal-box">
+
+    <!-- STEP: modo -->
+    <div id="step-modo">
+      <h2 class="text-lg font-semibold mb-4">Novo Curso</h2>
+      <div class="modo-tabs">
+        <button class="modo-tab active" data-m="manual">✏️ Manual</button>
+        <button class="modo-tab" data-m="pdf">📄 PDF do Programa</button>
+        <button class="modo-tab" data-m="json">{ } JSON</button>
       </div>
-      <div>
-        <label class="text-sm font-medium mb-1.5 block">Descrição <span class="text-dark/30 font-normal">(opcional)</span></label>
-        <textarea id="inp-desc" class="input resize-none" rows="2" placeholder="Breve descrição do conteúdo…"></textarea>
-      </div>
-      <div>
-        <label class="text-sm font-medium mb-2 block">Capa do curso</label>
-        <div class="capa-preview" id="capa-preview"><img id="capa-img" src="" alt="" /></div>
-        <div class="upload-zone" id="upload-zone">
-          <input type="file" id="inp-capa" accept="image/*" class="hidden" />
-          <svg class="w-7 h-7 text-dark/20 mx-auto mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12zm-6 3h12a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15A2.25 2.25 0 002.25 6.75v8.25A2.25 2.25 0 004.5 15.75h3z"/>
-          </svg>
-          <p id="upload-label" class="text-sm text-dark/40">Clique ou arraste uma imagem</p>
-          <p class="text-xs text-dark/25 mt-0.5">JPG, PNG, WEBP · redimensionado automaticamente</p>
+
+      <!-- Manual -->
+      <div id="form-manual" class="flex flex-col gap-4">
+        <div>
+          <label class="text-sm font-medium mb-1.5 block">Título <span class="text-red-400">*</span></label>
+          <input id="inp-titulo" type="text" class="input" placeholder="Ex: Cálculo I" />
         </div>
-        <div class="flex items-center gap-2 mt-2.5">
-          <span class="text-xs text-dark/40 shrink-0">Cor (sem imagem):</span>
-          <div class="flex gap-1.5 flex-wrap" id="color-picker">
-            <button class="color-dot sel" data-c="#6366f1" style="background:#6366f1" title="Índigo"></button>
-            <button class="color-dot" data-c="#0ea5e9" style="background:#0ea5e9" title="Azul"></button>
-            <button class="color-dot" data-c="#10b981" style="background:#10b981" title="Verde"></button>
-            <button class="color-dot" data-c="#f59e0b" style="background:#f59e0b" title="Âmbar"></button>
-            <button class="color-dot" data-c="#ef4444" style="background:#ef4444" title="Vermelho"></button>
-            <button class="color-dot" data-c="#8b5cf6" style="background:#8b5cf6" title="Roxo"></button>
-            <button class="color-dot" data-c="#191a23" style="background:#191a23" title="Escuro"></button>
+        <div>
+          <label class="text-sm font-medium mb-1.5 block">Descrição <span class="text-dark/30 font-normal">(opcional)</span></label>
+          <textarea id="inp-desc" class="input resize-none" rows="2" placeholder="Breve descrição…"></textarea>
+        </div>
+        <div>
+          <label class="text-sm font-medium mb-2 block">Capa do curso</label>
+          <div class="capa-preview" id="capa-preview"><img id="capa-img" src="" alt="" /></div>
+          <div class="upload-zone" id="upload-zone">
+            <input type="file" id="inp-capa" accept="image/*" class="hidden" />
+            <svg class="w-7 h-7 text-dark/20 mx-auto mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12zm-6 3h12a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15A2.25 2.25 0 002.25 6.75v8.25A2.25 2.25 0 004.5 15.75h3z"/>
+            </svg>
+            <p id="upload-label" class="text-sm text-dark/40">Clique ou arraste uma imagem</p>
+            <p class="text-xs text-dark/25 mt-0.5">JPG, PNG, WEBP · redimensionado automaticamente</p>
+          </div>
+          <div class="flex items-center gap-2 mt-2.5">
+            <span class="text-xs text-dark/40 shrink-0">Cor (sem imagem):</span>
+            <div class="flex gap-1.5 flex-wrap" id="color-picker">
+              <button class="color-dot sel" data-c="#6366f1" style="background:#6366f1" title="Índigo"></button>
+              <button class="color-dot" data-c="#0ea5e9" style="background:#0ea5e9" title="Azul"></button>
+              <button class="color-dot" data-c="#10b981" style="background:#10b981" title="Verde"></button>
+              <button class="color-dot" data-c="#f59e0b" style="background:#f59e0b" title="Âmbar"></button>
+              <button class="color-dot" data-c="#ef4444" style="background:#ef4444" title="Vermelho"></button>
+              <button class="color-dot" data-c="#8b5cf6" style="background:#8b5cf6" title="Roxo"></button>
+              <button class="color-dot" data-c="#191a23" style="background:#191a23" title="Escuro"></button>
+            </div>
           </div>
         </div>
+        <div class="flex gap-2 mt-2">
+          <button id="btn-cancel" class="btn-secondary flex-1 text-sm">Cancelar</button>
+          <button id="btn-criar-manual" class="btn-primary flex-1 text-sm">Criar</button>
+        </div>
+      </div>
+
+      <!-- PDF -->
+      <div id="form-pdf" class="hidden flex-col gap-4">
+        <p class="text-sm text-dark/55">Envie o PDF do plano de ensino/programa da disciplina. A IA vai extrair os módulos, aulas e datas das provas automaticamente.</p>
+        <div class="upload-zone" id="pdf-zone">
+          <input type="file" id="inp-pdf" accept=".pdf" class="hidden" />
+          <svg class="w-8 h-8 text-dark/20 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+          </svg>
+          <p id="pdf-label" class="text-sm text-dark/40">Clique ou arraste o PDF</p>
+          <p class="text-xs text-dark/25 mt-0.5">Máx 20 MB · PDF com texto (não escaneado)</p>
+        </div>
+        <div id="pdf-error" class="hidden text-sm text-red-600 bg-red-50 rounded-btn px-3 py-2"></div>
+        <div class="flex gap-2">
+          <button id="btn-cancel-pdf" class="btn-secondary flex-1 text-sm">Cancelar</button>
+          <button id="btn-gerar-pdf" class="btn-primary flex-1 text-sm" disabled>Gerar estrutura →</button>
+        </div>
+      </div>
+
+      <!-- JSON -->
+      <div id="form-json" class="hidden flex-col gap-4">
+        <p class="text-sm text-dark/55">Cole o JSON com o conteúdo programático gerado por qualquer IA. A plataforma vai normalizar e gerar a estrutura de módulos.</p>
+        <div>
+          <label class="text-sm font-medium mb-1.5 block">JSON do conteúdo</label>
+          <textarea id="inp-json" class="input font-mono text-xs resize-none" rows="8" placeholder='{"disciplinas": [{"nome": "SQL", "topicos": [...]}]}'></textarea>
+        </div>
+        <div id="json-error" class="hidden text-sm text-red-600 bg-red-50 rounded-btn px-3 py-2"></div>
+        <div class="flex gap-2">
+          <button id="btn-cancel-json" class="btn-secondary flex-1 text-sm">Cancelar</button>
+          <button id="btn-gerar-json" class="btn-primary flex-1 text-sm">Gerar estrutura →</button>
+        </div>
       </div>
     </div>
-    <div class="flex gap-2 mt-6">
-      <button id="btn-cancel" class="btn-secondary flex-1 text-sm">Cancelar</button>
-      <button id="btn-criar" class="btn-primary flex-1 text-sm">Criar</button>
+
+    <!-- STEP: loading -->
+    <div id="step-loading" class="hidden text-center py-8">
+      <div class="spinner mb-4"></div>
+      <p class="font-medium text-sm">Analisando com IA…</p>
+      <p class="text-xs text-dark/40 mt-1">Isso pode levar alguns segundos</p>
     </div>
+
+    <!-- STEP: preview -->
+    <div id="step-preview" class="hidden">
+      <div class="flex items-center gap-2 mb-4">
+        <button id="btn-voltar-preview" class="text-dark/40 hover:text-dark transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h2 class="text-lg font-semibold flex-1">Revisar estrutura</h2>
+        <span id="preview-count" class="text-xs text-dark/35"></span>
+      </div>
+
+      <div class="flex flex-col gap-3 mb-4">
+        <div>
+          <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1">Título do curso</label>
+          <input id="preview-titulo" type="text" class="input text-sm" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1">Descrição</label>
+          <input id="preview-desc" type="text" class="input text-sm" placeholder="Opcional" />
+        </div>
+        <div id="preview-provas-wrap" class="hidden">
+          <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1">Datas extraídas</label>
+          <div id="preview-provas" class="flex flex-col gap-1 text-sm"></div>
+        </div>
+      </div>
+
+      <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-2">Módulos e aulas <span class="font-normal normal-case">(clique para editar)</span></label>
+      <div id="preview-list" class="preview-list mb-4"></div>
+
+      <div id="preview-error" class="hidden text-sm text-red-600 bg-red-50 rounded-btn px-3 py-2 mb-3"></div>
+      <div class="flex gap-2">
+        <button id="btn-cancel-preview" class="btn-secondary flex-1 text-sm">Cancelar</button>
+        <button id="btn-criar-preview" class="btn-primary flex-1 text-sm">Criar curso</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -169,54 +237,87 @@ import MainLayout from '../layouts/MainLayout.astro';
     const res = await fetch('/api/cursos', { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) return;
     const cursos = await res.json();
-
     const grid  = document.getElementById('grid')!;
     const empty = document.getElementById('empty-state')!;
-
     if (!cursos.length) { empty.style.display = 'flex'; return; }
 
     grid.innerHTML = cursos.map((c: any) => {
       const pct = c.total_aulas > 0 ? Math.round(c.aulas_concluidas / c.total_aulas * 100) : 0;
       const cardTop = c.capa_base64
-        ? `<div class="card-top">
-            <img class="card-top-img" src="${c.capa_base64}" alt="" />
-            <div class="card-top-overlay"></div>
-            <span class="card-top-label">${c.titulo}</span>
-           </div>`
-        : `<div class="card-top" style="background:${c.cor || '#6366f1'};align-items:center;justify-content:center">
-            <span class="card-top-initials">${initials(c.titulo)}</span>
-           </div>`;
-      return `
-        <a href="/curso?id=${c.id}" class="course-card">
-          ${cardTop}
-          <div class="card-body">
-            <div class="card-title">${c.titulo}</div>
-            <div class="card-desc">${c.descricao || '<em>Sem descrição</em>'}</div>
-            <div class="card-meta">${c.total_modulos} módulo${c.total_modulos !== 1 ? 's' : ''} · ${c.total_aulas} aula${c.total_aulas !== 1 ? 's' : ''}</div>
-            <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
-          </div>
-        </a>`;
+        ? `<div class="card-top"><img class="card-top-img" src="${c.capa_base64}" alt="" /><div class="card-top-overlay"></div><span class="card-top-label">${c.titulo}</span></div>`
+        : `<div class="card-top" style="background:${c.cor || '#6366f1'};align-items:center;justify-content:center"><span class="card-top-initials">${initials(c.titulo)}</span></div>`;
+      return `<a href="/curso?id=${c.id}" class="course-card">${cardTop}
+        <div class="card-body">
+          <div class="card-title">${c.titulo}</div>
+          <div class="card-desc">${c.descricao || '<em>Sem descrição</em>'}</div>
+          <div class="card-meta">${c.total_modulos} módulo${c.total_modulos !== 1 ? 's' : ''} · ${c.total_aulas} aula${c.total_aulas !== 1 ? 's' : ''}</div>
+          <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
+        </div></a>`;
     }).join('');
   }
 
-  // ── Modal ──
+  // ── Estado do modal ──
   let cor = '#6366f1';
   let capaBase64: string | null = null;
+  let modo = 'manual';
+  let pdfFile: File | null = null;
+  let estruturaGerada: any = null;
 
   const overlay   = document.getElementById('overlay')!;
-  const btnNovo   = document.getElementById('btn-novo')!;
-  const btnCancel = document.getElementById('btn-cancel')!;
-  const btnCriar  = document.getElementById('btn-criar')!;
+  const modalBox  = document.getElementById('modal-box')!;
 
-  btnNovo.addEventListener('click', () => overlay.classList.add('show'));
-  btnCancel.addEventListener('click', () => {
+  function showStep(id: string) {
+    ['step-modo','step-loading','step-preview'].forEach(s => {
+      (document.getElementById(s) as HTMLElement).classList.add('hidden');
+    });
+    (document.getElementById(id) as HTMLElement).classList.remove('hidden');
+    modalBox.classList.toggle('wide', id === 'step-preview');
+  }
+
+  function closeModal() {
     overlay.classList.remove('show');
-    capaBase64 = null;
+    pdfFile = null; estruturaGerada = null; capaBase64 = null;
+    (document.getElementById('inp-titulo') as HTMLInputElement).value = '';
+    (document.getElementById('inp-desc') as HTMLTextAreaElement).value = '';
+    (document.getElementById('inp-json') as HTMLTextAreaElement).value = '';
+    (document.getElementById('pdf-label') as HTMLElement).textContent = 'Clique ou arraste o PDF';
+    (document.getElementById('btn-gerar-pdf') as HTMLButtonElement).disabled = true;
     (document.getElementById('capa-preview') as HTMLElement).style.display = 'none';
     (document.getElementById('upload-label') as HTMLElement).textContent = 'Clique ou arraste uma imagem';
-  });
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('show'); });
+    (document.getElementById('pdf-error') as HTMLElement).classList.add('hidden');
+    (document.getElementById('json-error') as HTMLElement).classList.add('hidden');
+    showStep('step-modo');
+  }
 
+  // Abrir modal
+  document.getElementById('btn-novo')!.addEventListener('click', () => {
+    overlay.classList.add('show');
+    showStep('step-modo');
+  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+  // Cancelar buttons
+  ['btn-cancel','btn-cancel-pdf','btn-cancel-json','btn-cancel-preview'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', closeModal);
+  });
+
+  // Voltar do preview
+  document.getElementById('btn-voltar-preview')!.addEventListener('click', () => showStep('step-modo'));
+
+  // ── Tabs de modo ──
+  document.querySelectorAll<HTMLButtonElement>('.modo-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.modo-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      modo = tab.dataset.m!;
+      ['form-manual','form-pdf','form-json'].forEach(f => {
+        (document.getElementById(f) as HTMLElement).classList.add('hidden');
+      });
+      (document.getElementById(`form-${modo}`) as HTMLElement).classList.remove('hidden');
+    });
+  });
+
+  // ── Cor ──
   document.getElementById('color-picker')!.addEventListener('click', e => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('.color-dot');
     if (!btn) return;
@@ -243,7 +344,6 @@ import MainLayout from '../layouts/MainLayout.astro';
       img.src = url;
     });
   }
-
   async function processImage(file: File) {
     const b64 = await compressImage(file);
     capaBase64 = b64;
@@ -251,43 +351,199 @@ import MainLayout from '../layouts/MainLayout.astro';
     (document.getElementById('capa-preview') as HTMLElement).style.display = 'block';
     (document.getElementById('upload-label') as HTMLElement).textContent = file.name;
   }
-
-  const inpCapa    = document.getElementById('inp-capa') as HTMLInputElement;
+  const inpCapa = document.getElementById('inp-capa') as HTMLInputElement;
   const uploadZone = document.getElementById('upload-zone')!;
-
   uploadZone.addEventListener('click', () => inpCapa.click());
   uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
   uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
   uploadZone.addEventListener('drop', async (e: DragEvent) => {
     e.preventDefault(); uploadZone.classList.remove('drag');
-    const file = e.dataTransfer?.files[0];
-    if (file) await processImage(file);
+    const file = e.dataTransfer?.files[0]; if (file) await processImage(file);
   });
-  inpCapa.addEventListener('change', async () => {
-    const file = inpCapa.files?.[0];
-    if (file) await processImage(file);
+  inpCapa.addEventListener('change', async () => { const file = inpCapa.files?.[0]; if (file) await processImage(file); });
+
+  // ── PDF upload ──
+  const inpPdf  = document.getElementById('inp-pdf') as HTMLInputElement;
+  const pdfZone = document.getElementById('pdf-zone')!;
+  const btnGerarPdf = document.getElementById('btn-gerar-pdf') as HTMLButtonElement;
+
+  pdfZone.addEventListener('click', () => inpPdf.click());
+  pdfZone.addEventListener('dragover', e => { e.preventDefault(); pdfZone.classList.add('drag'); });
+  pdfZone.addEventListener('dragleave', () => pdfZone.classList.remove('drag'));
+  pdfZone.addEventListener('drop', (e: DragEvent) => {
+    e.preventDefault(); pdfZone.classList.remove('drag');
+    const file = e.dataTransfer?.files[0];
+    if (file?.type === 'application/pdf') setPdfFile(file);
+  });
+  inpPdf.addEventListener('change', () => { if (inpPdf.files?.[0]) setPdfFile(inpPdf.files[0]); });
+
+  function setPdfFile(file: File) {
+    pdfFile = file;
+    (document.getElementById('pdf-label') as HTMLElement).textContent = `📄 ${file.name}`;
+    btnGerarPdf.disabled = false;
+  }
+
+  btnGerarPdf.addEventListener('click', async () => {
+    if (!pdfFile) return;
+    (document.getElementById('pdf-error') as HTMLElement).classList.add('hidden');
+    showStep('step-loading');
+    try {
+      const form = new FormData();
+      form.append('pdf', pdfFile);
+      const res = await fetch('/api/importar-curso/pdf', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao processar PDF');
+      estruturaGerada = data;
+      renderPreview(data);
+    } catch (err: any) {
+      showStep('step-modo');
+      (document.getElementById('pdf-error') as HTMLElement).textContent = err.message;
+      (document.getElementById('pdf-error') as HTMLElement).classList.remove('hidden');
+    }
   });
 
-  btnCriar.addEventListener('click', async () => {
-    const titulo = (document.getElementById('inp-titulo') as HTMLInputElement).value.trim();
+  // ── JSON geração ──
+  document.getElementById('btn-gerar-json')!.addEventListener('click', async () => {
+    const raw = (document.getElementById('inp-json') as HTMLTextAreaElement).value.trim();
+    (document.getElementById('json-error') as HTMLElement).classList.add('hidden');
+    let parsed: any;
+    try { parsed = JSON.parse(raw); } catch {
+      (document.getElementById('json-error') as HTMLElement).textContent = 'JSON inválido — verifique a sintaxe.';
+      (document.getElementById('json-error') as HTMLElement).classList.remove('hidden');
+      return;
+    }
+    showStep('step-loading');
+    try {
+      const res = await fetch('/api/importar-curso/json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ json: parsed }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao processar JSON');
+      estruturaGerada = data;
+      renderPreview(data);
+    } catch (err: any) {
+      showStep('step-modo');
+      (document.getElementById('json-error') as HTMLElement).textContent = err.message;
+      (document.getElementById('json-error') as HTMLElement).classList.remove('hidden');
+    }
+  });
+
+  // ── Preview ──
+  function renderPreview(e: any) {
+    (document.getElementById('preview-titulo') as HTMLInputElement).value = e.titulo || '';
+    (document.getElementById('preview-desc') as HTMLInputElement).value = e.descricao || '';
+
+    // Datas das provas
+    if (e.provas?.length) {
+      const wrap = document.getElementById('preview-provas-wrap')!;
+      wrap.classList.remove('hidden');
+      document.getElementById('preview-provas')!.innerHTML = e.provas.map((p: any) =>
+        `<div class="flex items-center gap-2 text-dark/60">
+          <span class="text-xs px-2 py-0.5 rounded-full border ${p.status === 'confirmada' ? 'border-green-300 text-green-700 bg-green-50' : 'border-amber-300 text-amber-700 bg-amber-50'}">${p.status}</span>
+          <span class="font-medium text-dark">${p.nome}</span>
+          ${p.data ? `<span>· ${p.data}</span>` : ''}
+          ${p.peso > 1 ? `<span class="text-xs">(peso ${p.peso})</span>` : ''}
+        </div>`
+      ).join('');
+    } else {
+      document.getElementById('preview-provas-wrap')!.classList.add('hidden');
+    }
+
+    // Módulos
+    const list = document.getElementById('preview-list')!;
+    const mods: any[] = e.modulos || [];
+    const totalAulas = mods.reduce((s: number, m: any) => s + (m.aulas?.length || 0), 0);
+    document.getElementById('preview-count')!.textContent = `${mods.length} módulo${mods.length !== 1 ? 's' : ''} · ${totalAulas} aula${totalAulas !== 1 ? 's' : ''}`;
+
+    list.innerHTML = mods.map((m: any, mi: number) => `
+      <div class="preview-mod" id="pmod-${mi}">
+        <div class="preview-mod-header">
+          <input class="preview-mod-title" value="${m.titulo}" data-mi="${mi}" />
+          <button class="del-btn" onclick="delMod(${mi})" title="Remover módulo">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        ${(m.aulas || []).map((a: any, ai: number) => `
+          <div class="preview-aula" id="paula-${mi}-${ai}">
+            <span class="text-xs text-dark/20 shrink-0 font-mono w-5 text-right">${ai + 1}</span>
+            <input class="preview-aula-title" value="${a.titulo}" data-mi="${mi}" data-ai="${ai}" />
+            <button class="del-btn" onclick="delAula(${mi},${ai})" title="Remover aula">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>`).join('')}
+      </div>`).join('');
+
+    showStep('step-preview');
+  }
+
+  function readPreviewModulos(): any[] {
+    const mods: any[] = [];
+    document.querySelectorAll<HTMLInputElement>('.preview-mod-title').forEach(inp => {
+      const mi = parseInt(inp.dataset.mi!);
+      mods[mi] = { titulo: inp.value.trim(), aulas: [] };
+    });
+    document.querySelectorAll<HTMLInputElement>('.preview-aula-title').forEach(inp => {
+      const mi = parseInt(inp.dataset.mi!);
+      const ai = parseInt(inp.dataset.ai!);
+      if (!mods[mi]) return;
+      mods[mi].aulas[ai] = { titulo: inp.value.trim(), duracao_min: 50 };
+    });
+    return mods.filter(Boolean).map(m => ({ ...m, aulas: (m.aulas || []).filter(Boolean) }));
+  }
+
+  (window as any).delMod  = (mi: number) => document.getElementById(`pmod-${mi}`)?.remove();
+  (window as any).delAula = (mi: number, ai: number) => document.getElementById(`paula-${mi}-${ai}`)?.remove();
+
+  // ── Criar manual ──
+  document.getElementById('btn-criar-manual')!.addEventListener('click', async () => {
+    const titulo   = (document.getElementById('inp-titulo') as HTMLInputElement).value.trim();
     const descricao = (document.getElementById('inp-desc') as HTMLTextAreaElement).value.trim();
     if (!titulo) { (document.getElementById('inp-titulo') as HTMLInputElement).focus(); return; }
-
-    btnCriar.textContent = 'Criando…';
-    (btnCriar as HTMLButtonElement).disabled = true;
-
+    const btn = document.getElementById('btn-criar-manual') as HTMLButtonElement;
+    btn.textContent = 'Criando…'; btn.disabled = true;
     const res = await fetch('/api/cursos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ titulo, descricao, cor, capa_base64: capaBase64 }),
     });
+    btn.textContent = 'Criar'; btn.disabled = false;
+    if (res.ok) { const { id } = await res.json(); location.href = `/curso?id=${id}`; }
+  });
 
-    btnCriar.textContent = 'Criar';
-    (btnCriar as HTMLButtonElement).disabled = false;
+  // ── Criar do preview ──
+  document.getElementById('btn-criar-preview')!.addEventListener('click', async () => {
+    const titulo   = (document.getElementById('preview-titulo') as HTMLInputElement).value.trim();
+    const descricao = (document.getElementById('preview-desc') as HTMLInputElement).value.trim();
+    if (!titulo) { (document.getElementById('preview-titulo') as HTMLInputElement).focus(); return; }
+    const modulos = readPreviewModulos();
+    if (!modulos.length) {
+      const errEl = document.getElementById('preview-error')!;
+      errEl.textContent = 'Adicione ao menos um módulo antes de criar.';
+      errEl.classList.remove('hidden');
+      return;
+    }
 
-    if (res.ok) {
-      const { id } = await res.json();
-      location.href = `/curso?id=${id}`;
+    const btn = document.getElementById('btn-criar-preview') as HTMLButtonElement;
+    btn.textContent = 'Criando…'; btn.disabled = true;
+
+    const res = await fetch('/api/importar-curso/criar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ titulo, descricao, cor: estruturaGerada?.cor || cor, modulos }),
+    });
+    btn.textContent = 'Criar curso'; btn.disabled = false;
+
+    if (res.ok) { const { id } = await res.json(); location.href = `/curso?id=${id}`; }
+    else {
+      const errEl = document.getElementById('preview-error')!;
+      errEl.textContent = 'Erro ao criar curso. Tente novamente.';
+      errEl.classList.remove('hidden');
     }
   });
 

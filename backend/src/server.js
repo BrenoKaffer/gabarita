@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
@@ -10,6 +11,7 @@ import concursosRouter from './routes/concursos.js';
 import questoesRouter from './routes/questoes.js';
 import flashcardsRouter from './routes/flashcards.js';
 import planoRouter from './routes/plano.js';
+import importarCursoRouter from './routes/importar_curso.js';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const STATIC = join(__dir, '..', '..', 'frontend', 'dist');
@@ -27,6 +29,7 @@ app.use('/api/concursos', concursosRouter);
 app.use('/api/questoes', questoesRouter);
 app.use('/api/flashcards', flashcardsRouter);
 app.use('/api/plano', planoRouter);
+app.use('/api/importar-curso', importarCursoRouter);
 
 // Serve Astro build (produção)
 app.use(express.static(STATIC));
