@@ -52,13 +52,38 @@ import MainLayout from '../layouts/MainLayout.astro';
   }
 
   .login-form-side {
-    background: #f3f3f3;
+    background-color: #f3f3f3;
+    background-image:
+      radial-gradient(circle, rgba(25,26,35,0.09) 1px, transparent 1px);
+    background-size: 22px 22px;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 2.5rem 2rem;
   }
+
+  /* Full-page loading overlay after login */
+  #page-overlay {
+    position: fixed; inset: 0; background: #191a23;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 20px; z-index: 9999;
+  }
+  #page-overlay.show { display: flex; }
+  .ov-spinner {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid rgba(185,255,102,0.2);
+    border-top-color: #b9ff66;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
+
+<!-- Page overlay loading -->
+<div id="page-overlay">
+  <img src="/logo_gabarita_escuro.png" alt="" style="height:48px;mix-blend-mode:lighten;opacity:0.85" />
+  <div class="ov-spinner"></div>
+</div>
 
 <div class="login-wrap">
 
@@ -234,7 +259,8 @@ import MainLayout from '../layouts/MainLayout.astro';
       }
       localStorage.setItem('gab_token', json.token);
       localStorage.setItem('gab_user', JSON.stringify(json.user));
-      location.href = '/home';
+      document.getElementById('page-overlay')!.classList.add('show');
+      location.replace('/home');
     } catch {
       errText.textContent = 'Sem conexão com o servidor.';
       errEl.classList.remove('hidden');

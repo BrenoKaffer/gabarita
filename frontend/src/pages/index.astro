@@ -1,7 +1,27 @@
 ---
-// Redireciona: logado → /home, não logado → /login
 ---
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #191a23; }
+  .splash {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 24px; background: #191a23;
+  }
+  .spinner {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 3px solid rgba(185,255,102,0.2);
+    border-top-color: #b9ff66;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+<div class="splash">
+  <img src="/logo_gabarita_escuro.png" alt="Gabarita" style="height:52px;mix-blend-mode:lighten;opacity:0.9" />
+  <div class="spinner"></div>
+</div>
 <script>
   const token = localStorage.getItem('gab_token');
-  location.href = token ? '/home' : '/login';
+  location.replace(token ? '/home' : '/login');
 </script>
