@@ -18,11 +18,33 @@ import MainLayout from '../layouts/MainLayout.astro';
     background: white; border: 1.5px solid #191a23; border-radius: 16px;
     padding: 16px; text-align: center;
   }
-  .disc-row { display: grid; grid-template-columns: 140px 1fr 60px; align-items: center; gap: 12px; }
+  .disc-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+  .disc-bar-wrap { height: 6px; background: rgba(25,26,35,0.07); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .disc-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+
+  /* Próximo Passo */
+  .pp-card {
+    border-radius: 20px; background: #191a23;
+    border: 1.5px solid #191a23; box-shadow: 0px 4px 0px rgba(25,26,35,0.4);
+    overflow: hidden;
+  }
+
+  /* Heatmap */
+  .heatmap-grid {
+    display: grid; grid-template-rows: repeat(7, 1fr);
+    grid-auto-flow: column; gap: 3px;
+  }
+  .hm-cell {
+    width: 12px; height: 12px; border-radius: 2px;
+    background: rgba(25,26,35,0.07);
+  }
+  @media (max-width: 480px) {
+    .hm-cell { width: 10px; height: 10px; }
+  }
 </style>
 
 <!-- Welcome -->
-<div class="flex items-center justify-between mb-6">
+<div class="flex items-center justify-between mb-5">
   <div>
     <h1 class="text-2xl font-semibold">Olá, <span id="user-name" class="greenhead">…</span>!</h1>
     <p class="text-sm text-dark/50 mt-0.5" id="welcome-sub">Pronto para estudar?</p>
@@ -33,21 +55,42 @@ import MainLayout from '../layouts/MainLayout.astro';
   </div>
 </div>
 
+<!-- Próximo Passo (dynamic, hidden until loaded) -->
+<div id="proximo-passo" class="pp-card hidden mb-6">
+  <div class="px-5 pt-4 pb-3 flex items-center justify-between gap-4">
+    <div class="flex-1 min-w-0">
+      <div class="text-green text-[10px] font-semibold uppercase tracking-widest mb-1">Próximo Passo</div>
+      <h2 id="pp-disc" class="text-white text-base font-semibold truncate"></h2>
+      <p id="pp-sub" class="text-white/50 text-xs mt-0.5"></p>
+    </div>
+    <a id="pp-btn" href="/study" class="shrink-0 bg-green text-dark font-semibold text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity whitespace-nowrap">
+      Estudar 10 →
+    </a>
+  </div>
+  <div class="px-5 pb-4 flex items-center gap-3">
+    <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.1)">
+      <div id="pp-bar" class="h-full rounded-full transition-all" style="width:0%"></div>
+    </div>
+    <span id="pp-pct" class="text-xs font-semibold text-white/50 tabular-nums"></span>
+    <span class="text-xs text-white/25">de acerto</span>
+  </div>
+</div>
+
 <!-- Quick actions -->
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
   <a href="/study" class="action-card bg-green">
     <div class="action-icon bg-dark/10">
       <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
       </svg>
     </div>
-    <h3 class="font-semibold text-dark">Revisão Livre</h3>
+    <h3 class="font-semibold text-dark">Resolver Questões</h3>
     <p class="text-xs text-dark/60 mt-1">Questão a questão com gabarito imediato</p>
   </a>
   <a href="/simulado" class="action-card bg-white">
     <div class="action-icon bg-dark/5">
       <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
       </svg>
     </div>
     <h3 class="font-semibold text-dark">Simulado</h3>
@@ -59,7 +102,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
       </svg>
     </div>
-    <h3 class="font-semibold text-white">Revisão de Erros</h3>
+    <h3 class="font-semibold text-white">Caderno de Erros</h3>
     <p class="text-xs text-white/50 mt-1">Refaça as questões que você errou</p>
   </a>
 </div>
@@ -73,45 +116,66 @@ import MainLayout from '../layouts/MainLayout.astro';
   </div>
   <div class="grid grid-cols-3 gap-3">
     <div class="stat-tile !py-3">
-      <div class="text-lg font-bold text-dark"><span id="hq-val">0</span><span class="text-sm font-normal text-dark/35">/<span id="hq-meta">10</span></span></div>
+      <div class="text-lg font-bold text-dark tabular-nums"><span id="hq-val">0</span><span class="text-sm font-normal text-dark/35">/<span id="hq-meta">10</span></span></div>
       <div class="text-xs text-dark/45 mt-0.5">Questões</div>
       <div class="h-1 rounded-full bg-dark/07 mt-2 overflow-hidden"><div id="hq-bar" class="h-full rounded-full bg-green transition-all" style="width:0%"></div></div>
     </div>
     <div class="stat-tile !py-3">
-      <div class="text-lg font-bold text-dark"><span id="hf-val">0</span><span class="text-sm font-normal text-dark/35">/<span id="hf-meta">20</span></span></div>
+      <div class="text-lg font-bold text-dark tabular-nums"><span id="hf-val">0</span><span class="text-sm font-normal text-dark/35">/<span id="hf-meta">20</span></span></div>
       <div class="text-xs text-dark/45 mt-0.5">Flashcards</div>
       <div class="h-1 rounded-full bg-dark/07 mt-2 overflow-hidden"><div id="hf-bar" class="h-full rounded-full bg-indigo-400 transition-all" style="width:0%"></div></div>
     </div>
     <div class="stat-tile !py-3">
-      <div class="text-lg font-bold text-dark"><span id="hm-val">0</span><span class="text-sm font-normal text-dark/35">/<span id="hm-meta">50</span></span></div>
+      <div class="text-lg font-bold text-dark tabular-nums"><span id="hm-val">0</span><span class="text-sm font-normal text-dark/35">/<span id="hm-meta">50</span></span></div>
       <div class="text-xs text-dark/45 mt-0.5">Minutos</div>
       <div class="h-1 rounded-full bg-dark/07 mt-2 overflow-hidden"><div id="hm-bar" class="h-full rounded-full bg-amber-400 transition-all" style="width:0%"></div></div>
     </div>
   </div>
 </div>
 
-<!-- Stats grid -->
+<!-- Stats grid: 4 métricas + Preparação -->
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
   <div class="stat-tile">
-    <div class="text-3xl font-semibold text-dark" id="stat-respondidas">—</div>
+    <div class="text-3xl font-semibold text-dark tabular-nums" id="stat-respondidas">—</div>
     <div class="text-xs text-dark/50 mt-1">Respondidas</div>
   </div>
   <div class="stat-tile">
-    <div class="text-3xl font-semibold text-dark" id="stat-acertos">—</div>
+    <div class="text-3xl font-semibold text-dark tabular-nums" id="stat-acertos">—</div>
     <div class="text-xs text-dark/50 mt-1">Acertos</div>
   </div>
   <div class="stat-tile">
-    <div class="text-3xl font-semibold text-dark" id="stat-erros">—</div>
+    <div class="text-3xl font-semibold text-dark tabular-nums" id="stat-erros">—</div>
     <div class="text-xs text-dark/50 mt-1">Erros</div>
   </div>
   <div class="stat-tile" style="background:#b9ff66">
-    <div class="text-3xl font-semibold text-dark" id="stat-pct">—</div>
+    <div class="text-3xl font-semibold text-dark tabular-nums" id="stat-pct">—</div>
     <div class="text-xs text-dark/60 mt-1">Aproveitamento</div>
   </div>
 </div>
 
-<!-- Por disciplina + últimos simulados (lado a lado em telas grandes) -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+<!-- Preparação para o concurso -->
+<div id="readiness-wrap" class="hidden mb-6">
+  <div class="card !p-5">
+    <div class="flex items-center justify-between mb-3">
+      <div>
+        <h2 class="text-sm font-semibold" id="readiness-label">Preparação</h2>
+        <p id="readiness-sub" class="text-xs text-dark/40 mt-0.5"></p>
+      </div>
+      <span id="readiness-pct" class="text-2xl font-bold tabular-nums">—%</span>
+    </div>
+    <div class="h-2.5 rounded-full overflow-hidden" style="background:rgba(25,26,35,0.07)">
+      <div id="readiness-bar" class="h-full rounded-full transition-all duration-700" style="width:0%"></div>
+    </div>
+    <div class="flex justify-between mt-2">
+      <span class="text-[10px] text-dark/30">0%</span>
+      <span id="readiness-dias" class="text-[10px] text-dark/40 font-medium"></span>
+      <span class="text-[10px] text-dark/30">100%</span>
+    </div>
+  </div>
+</div>
+
+<!-- Por disciplina + últimos simulados -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
 
   <!-- Disciplinas -->
   <div class="card">
@@ -119,7 +183,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       <h2 class="text-base font-semibold">Por disciplina</h2>
       <a href="/stats" class="text-xs text-dark/40 hover:text-dark transition-colors">Ver tudo →</a>
     </div>
-    <div id="disc-bars" class="flex flex-col gap-3">
+    <div id="disc-bars" class="flex flex-col gap-4">
       <div class="text-sm text-dark/40">Carregando…</div>
     </div>
   </div>
@@ -136,6 +200,26 @@ import MainLayout from '../layouts/MainLayout.astro';
   </div>
 
 </div>
+
+<!-- Atividade (heatmap) -->
+<div class="card">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-base font-semibold">Atividade</h2>
+    <span id="heatmap-label" class="text-xs text-dark/40"></span>
+  </div>
+  <div class="overflow-x-auto pb-1">
+    <div id="heatmap" class="heatmap-grid" style="min-width:160px"></div>
+  </div>
+  <div class="flex items-center justify-end gap-1.5 mt-3">
+    <span class="text-[10px] text-dark/30">Menos</span>
+    <div class="w-3 h-3 rounded-sm" style="background:rgba(25,26,35,0.07)"></div>
+    <div class="w-3 h-3 rounded-sm" style="background:rgba(185,255,102,0.3)"></div>
+    <div class="w-3 h-3 rounded-sm" style="background:rgba(185,255,102,0.6)"></div>
+    <div class="w-3 h-3 rounded-sm" style="background:#b9ff66"></div>
+    <span class="text-[10px] text-dark/30">Mais</span>
+  </div>
+</div>
+
 </MainLayout>
 
 <script>
@@ -148,7 +232,6 @@ import MainLayout from '../layouts/MainLayout.astro';
     document.getElementById('user-name')!.textContent = first;
     const av = document.getElementById('user-avatar-big')!;
     av.textContent = initials;
-
     const hour = new Date().getHours();
     const sub  = document.getElementById('welcome-sub')!;
     if      (hour < 12) sub.textContent = 'Bom dia! Hora de revisar.';
@@ -169,7 +252,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     document.getElementById('stat-erros')!.textContent       = (overall.respondidas||0)-(overall.acertos||0);
     document.getElementById('stat-pct')!.textContent         = pct + '%';
 
-    // Barras por disciplina
+    // Disciplinas com label de domínio
     const bars = document.getElementById('disc-bars')!;
     if (!byDisc.length) {
       bars.innerHTML = `
@@ -178,20 +261,29 @@ import MainLayout from '../layouts/MainLayout.astro';
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
           </svg>
           <p class="text-sm text-dark/40">Nenhuma questão respondida ainda.</p>
-          <a href="/study" class="text-xs font-medium text-dark underline underline-offset-2">Começar revisão →</a>
+          <a href="/study" class="text-xs font-medium text-dark underline underline-offset-2">Começar →</a>
         </div>`;
     } else {
       bars.innerHTML = '';
       for (const { disc, total, acertos } of byDisc) {
         const p     = total ? Math.round((acertos / total) * 100) : 0;
         const color = p >= 70 ? '#b9ff66' : (p >= 50 ? '#fde68a' : '#fca5a5');
+        const label = p >= 70 ? 'Dominado' : (p >= 50 ? 'Em progresso' : 'Reforçar');
+        const labelColor = p >= 70 ? '#166534' : (p >= 50 ? '#854d0e' : '#991b1b');
+        const labelBg    = p >= 70 ? '#dcfce7' : (p >= 50 ? '#fef9c3' : '#fee2e2');
         bars.insertAdjacentHTML('beforeend', `
-          <div class="disc-row">
-            <span class="text-xs font-medium text-dark truncate">${disc}</span>
-            <div class="h-2 rounded-full bg-dark/8 overflow-hidden">
-              <div class="h-full rounded-full transition-all" style="width:${p}%;background:${color}"></div>
+          <div>
+            <div class="disc-row mb-1">
+              <span class="text-xs font-medium text-dark truncate">${disc}</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style="background:${labelBg};color:${labelColor}">${label}</span>
+                <span class="text-xs font-bold tabular-nums" style="color:${labelColor}">${p}%</span>
+              </div>
             </div>
-            <span class="text-xs text-right font-semibold" style="color:${p>=70?'#166534':p>=50?'#854d0e':'#991b1b'}">${p}%</span>
+            <div class="disc-bar-wrap">
+              <div class="disc-bar-fill" style="width:${p}%;background:${color}"></div>
+            </div>
+            <span class="text-[10px] text-dark/30 mt-0.5 block">${total} questão${total !== 1 ? 'ões' : ''} · ${acertos} acerto${acertos !== 1 ? 's' : ''}</span>
           </div>`);
       }
     }
@@ -227,15 +319,49 @@ import MainLayout from '../layouts/MainLayout.astro';
           </div>`);
       }
     }
+
+    // Preparação para o concurso mais próximo
+    loadReadiness(pct);
+  }
+
+  async function loadReadiness(accuracyPct: number) {
+    try {
+      const res = await fetch('/api/concursos');
+      if (!res.ok) return;
+      const list = await res.json();
+      if (!list.length) return;
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const daysTo = (ds: string) => {
+        if (!ds) return Infinity;
+        const t = new Date(ds + 'T12:00:00');
+        return Math.ceil((t.getTime() - today.getTime()) / 86400000);
+      };
+      const nearest = list.reduce((b: any, c: any) => daysTo(c.data_prova) < daysTo(b.data_prova) ? c : b);
+      const dias = daysTo(nearest.data_prova);
+      if (!isFinite(dias)) return;
+
+      const wrap = document.getElementById('readiness-wrap')!;
+      wrap.classList.remove('hidden');
+      document.getElementById('readiness-label')!.textContent = `Preparação — ${nearest.nome}`;
+      document.getElementById('readiness-pct')!.textContent   = accuracyPct + '%';
+      document.getElementById('readiness-dias')!.textContent  = `${dias} dias restantes`;
+      (document.getElementById('readiness-bar') as HTMLElement).style.width = accuracyPct + '%';
+
+      const color = accuracyPct >= 70 ? '#b9ff66' : (accuracyPct >= 50 ? '#fde68a' : '#fca5a5');
+      (document.getElementById('readiness-bar') as HTMLElement).style.background = color;
+
+      const sub = accuracyPct >= 70 ? 'No caminho certo! Continue o ritmo.'
+                : accuracyPct >= 50 ? 'Progresso razoável — intensifique os pontos fracos.'
+                : 'Fase inicial — mais questões para consolidar o domínio.';
+      document.getElementById('readiness-sub')!.textContent = sub;
+    } catch {}
   }
 
   async function loadHoje() {
     const res = await fetch('/api/plano/hoje', { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) return;
     const d = await res.json();
-
     document.getElementById('hoje-bar')!.classList.remove('hidden');
-
     const setBar = (valId: string, metaId: string, barId: string, v: number, m: number) => {
       (document.getElementById(valId) as HTMLElement).textContent = String(v);
       (document.getElementById(metaId) as HTMLElement).textContent = String(m);
@@ -245,19 +371,66 @@ import MainLayout from '../layouts/MainLayout.astro';
     setBar('hq-val','hq-meta','hq-bar', d.questoesHoje, d.metas.questoes);
     setBar('hf-val','hf-meta','hf-bar', d.flashcardsHoje, d.metas.flashcards);
     setBar('hm-val','hm-meta','hm-bar', d.minutosHoje, d.metas.minutos);
-
     if (d.streak.atual > 0) {
       const el = document.getElementById('streak-home')!;
-      el.classList.remove('hidden');
-      el.classList.add('inline-flex');
+      el.classList.remove('hidden'); el.classList.add('inline-flex');
       (document.getElementById('streak-home-n') as HTMLElement).textContent = String(d.streak.atual);
     }
-
     const done = [d.questoesHoje >= d.metas.questoes, d.flashcardsHoje >= d.metas.flashcards, d.minutosHoje >= d.metas.minutos].filter(Boolean).length;
     (document.getElementById('hoje-status') as HTMLElement).textContent =
       done === 3 ? '🎉 Todas as metas concluídas!' : `${done}/3 metas`;
   }
 
+  async function loadProximoPasso() {
+    try {
+      const res = await fetch('/api/stats/proximo-passo', { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const d = await res.json();
+      if (!d.disc) return;
+      const card = document.getElementById('proximo-passo')!;
+      card.classList.remove('hidden');
+      document.getElementById('pp-disc')!.textContent = d.disc;
+      document.getElementById('pp-sub')!.textContent =
+        `${d.pct}% de aproveitamento · ${d.total} questões respondidas — reforce este assunto`;
+      document.getElementById('pp-pct')!.textContent = d.pct + '%';
+      const bar = document.getElementById('pp-bar') as HTMLElement;
+      bar.style.width = d.pct + '%';
+      bar.style.background = d.pct >= 70 ? '#b9ff66' : (d.pct >= 50 ? '#fde68a' : '#fca5a5');
+      (document.getElementById('pp-btn') as HTMLAnchorElement).href = `/study?disc=${encodeURIComponent(d.disc)}`;
+    } catch {}
+  }
+
+  async function loadHeatmap() {
+    try {
+      const res = await fetch('/api/stats/heatmap', { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const { days } = await res.json();
+      const max = Math.max(...days.map((d: any) => d.count), 1);
+      const totalAtivo = days.filter((d: any) => d.count > 0).length;
+
+      document.getElementById('heatmap-label')!.textContent =
+        `${totalAtivo} dia${totalAtivo !== 1 ? 's' : ''} ativo${totalAtivo !== 1 ? 's' : ''} nos últimos 3 meses`;
+
+      const grid = document.getElementById('heatmap')!;
+      grid.innerHTML = '';
+      for (const day of days) {
+        const cell = document.createElement('div');
+        cell.className = 'hm-cell';
+        if (day.count > 0) {
+          const intensity = day.count / max;
+          if (intensity < 0.33)      cell.style.background = 'rgba(185,255,102,0.3)';
+          else if (intensity < 0.66) cell.style.background = 'rgba(185,255,102,0.6)';
+          else                       cell.style.background = '#b9ff66';
+        }
+        const label = new Date(day.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+        cell.title = day.count > 0 ? `${label}: ${day.count} questão${day.count !== 1 ? 'ões' : ''}` : label;
+        grid.appendChild(cell);
+      }
+    } catch {}
+  }
+
   loadStats();
   loadHoje();
+  loadProximoPasso();
+  loadHeatmap();
 </script>
