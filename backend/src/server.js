@@ -12,6 +12,7 @@ import questoesRouter from './routes/questoes.js';
 import flashcardsRouter from './routes/flashcards.js';
 import planoRouter from './routes/plano.js';
 import importarCursoRouter from './routes/importar_curso.js';
+import agendaRouter from './routes/agenda.js';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const STATIC = join(__dir, '..', '..', 'frontend', 'dist');
@@ -30,6 +31,7 @@ app.use('/api/questoes', questoesRouter);
 app.use('/api/flashcards', flashcardsRouter);
 app.use('/api/plano', planoRouter);
 app.use('/api/importar-curso', importarCursoRouter);
+app.use('/api/agenda', agendaRouter);
 
 // Serve Astro build (produção)
 app.use(express.static(STATIC));

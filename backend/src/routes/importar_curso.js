@@ -114,7 +114,7 @@ router.post('/json', async (req, res) => {
 // ── POST /api/importar-curso/criar ──
 // Cria o curso completo a partir da estrutura confirmada
 router.post('/criar', (req, res) => {
-  const { titulo, descricao, cor, modulos } = req.body;
+  const { titulo, descricao, cor, modulos, provas } = req.body;
   if (!titulo?.trim()) return res.status(400).json({ error: 'titulo obrigatório' });
   if (!Array.isArray(modulos)) return res.status(400).json({ error: 'modulos inválidos' });
 
@@ -137,6 +137,16 @@ router.post('/criar', (req, res) => {
         db.prepare(
           'INSERT INTO aulas (modulo_id, titulo, duracao_min, ordem) VALUES (?, ?, ?, ?)'
         ).run(modId, a.titulo.trim(), a.duracao_min || 50, ai + 1);
+      }
+    }
+
+    if (Array.isArray(provas)) {
+      const insProva = db.prepare(
+        'INSERT INTO agenda_eventos (user_id, curso_id, nome, data, status, peso) VALUES (?,?,?,?,?,?)'
+      );
+      for (const p of provas) {
+        if (!p.data) continue;
+        insProva.run(req.user.id, cursoId, p.nome || 'Prova', p.data, p.status || 'confirmada', p.peso || 1);
       }
     }
 

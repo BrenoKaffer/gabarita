@@ -160,6 +160,17 @@ db.exec(`
     explicacao   TEXT,
     importado_em TEXT DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS agenda_eventos (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id   INTEGER NOT NULL REFERENCES users(id),
+    curso_id  INTEGER REFERENCES cursos(id) ON DELETE CASCADE,
+    nome      TEXT NOT NULL,
+    data      TEXT NOT NULL,
+    status    TEXT DEFAULT 'confirmada',
+    peso      REAL DEFAULT 1,
+    criado_em TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 // Migrations
