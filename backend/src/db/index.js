@@ -123,6 +123,30 @@ db.exec(`
     PRIMARY KEY (user_id, card_id)
   );
 
+  CREATE TABLE IF NOT EXISTS metas (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id  INTEGER NOT NULL REFERENCES users(id),
+    tipo     TEXT NOT NULL,
+    valor    INTEGER NOT NULL DEFAULT 0,
+    UNIQUE(user_id, tipo)
+  );
+
+  CREATE TABLE IF NOT EXISTS sessoes_pomodoro (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES users(id),
+    duracao_min INTEGER NOT NULL,
+    tipo        TEXT DEFAULT 'foco',
+    nota        TEXT,
+    iniciado_em TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS streak (
+    user_id     INTEGER NOT NULL REFERENCES users(id) PRIMARY KEY,
+    atual       INTEGER DEFAULT 0,
+    maximo      INTEGER DEFAULT 0,
+    ultima_data TEXT
+  );
+
   CREATE TABLE IF NOT EXISTS questoes (
     id           TEXT PRIMARY KEY,
     banca        TEXT,
@@ -143,6 +167,23 @@ const { c: concursosCount } = db.prepare('SELECT COUNT(*) AS c FROM concursos').
 if (concursosCount === 0) {
   db.prepare("INSERT INTO concursos (nome, data_prova, cor) VALUES (?, ?, ?)").run('CGU', '2026-12-13', '#b9ff66');
   db.prepare("INSERT INTO concursos (nome, data_prova, cor) VALUES (?, ?, ?)").run('SETEC', '2027-01-17', '#facc15');
+}
+
+export function updateStreak(userId) {
+  const today     = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  const row = db.prepare('SELECT * FROM streak WHERE user_id = ?').get(userId);
+  if (!row) {
+    db.prepare('INSERT INTO streak (user_id, atual, maximo, ultima_data) VALUES (?,1,1,?)').run(userId, today);
+    return;
+  }
+  if (row.ultima_data === today) return;
+
+  const novoAtual = row.ultima_data === yesterday ? row.atual + 1 : 1;
+  const novoMax   = Math.max(novoAtual, row.maximo);
+  db.prepare('UPDATE streak SET atual=?, maximo=?, ultima_data=? WHERE user_id=?')
+    .run(novoAtual, novoMax, today, userId);
 }
 
 export default db;

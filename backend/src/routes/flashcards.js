@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import db from '../db/index.js';
+import db, { updateStreak } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -221,6 +221,7 @@ router.post('/cards/:id/avaliar', (req, res) => {
     WHERE user_id=? AND card_id=?
   `).run(next.intervalo, next.easiness, next.repeticoes, next.proxima_rev, next.ultima_rev, uid, cardId);
 
+  updateStreak(uid);
   res.json({ ...next, strength: memoryStrength(next) });
 });
 

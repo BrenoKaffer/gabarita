@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import db from '../db/index.js';
+import db, { updateStreak } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -21,6 +21,8 @@ router.post('/answer', (req, res) => {
       ON CONFLICT(user_id, question_id) DO UPDATE SET chosen=excluded.chosen, correct=excluded.correct, answered_at=datetime('now')
     `).run(req.user.id, question_id, chosen, correct);
   }
+
+  if (correct !== null) updateStreak(req.user.id);
 
   res.json({
     correct,

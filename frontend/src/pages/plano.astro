@@ -1,0 +1,422 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+<MainLayout title="Plano">
+
+<style>
+  /* Progress rings */
+  .ring-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.5rem; flex: 1; min-width: 100px;
+  }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-bg   { fill: none; stroke: rgba(25,26,35,0.07); }
+  .ring-fill { fill: none; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+  .ring-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(25,26,35,0.4); font-weight: 600; }
+  .ring-val   { font-size: 1.0625rem; font-weight: 700; color: #191a23; }
+  .ring-meta  { font-size: 0.72rem; color: rgba(25,26,35,0.35); }
+
+  /* Pomodoro */
+  #pom-wrap { max-width: 320px; margin: 0 auto; }
+  #pom-circle-svg { display: block; margin: 0 auto; }
+  #pom-arc { fill: none; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  #pom-arc-bg { fill: none; stroke: rgba(25,26,35,0.07); }
+  #pom-time {
+    font-size: 3rem; font-weight: 700; letter-spacing: -0.04em;
+    text-align: center; color: #191a23; line-height: 1;
+  }
+  #pom-phase {
+    text-align: center; font-size: 0.75rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: rgba(25,26,35,0.4); font-weight: 600;
+  }
+  #pom-cycles {
+    display: flex; justify-content: center; gap: 6px; margin-top: 0.75rem;
+  }
+  .cycle-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(25,26,35,0.12); transition: background 0.3s;
+  }
+  .cycle-dot.done { background: #b9ff66; }
+  .cycle-dot.active { background: #191a23; }
+
+  #pom-controls { display: flex; justify-content: center; gap: 0.75rem; margin-top: 1.25rem; }
+  .pom-btn {
+    padding: 0.6rem 1.5rem; border-radius: 10px; font-weight: 600; font-size: 0.875rem;
+    border: 1.5px solid #191a23; cursor: pointer; transition: all 0.15s;
+    background: white; color: #191a23;
+  }
+  .pom-btn:hover { background: #191a23; color: white; }
+  .pom-btn.primary { background: #191a23; color: white; }
+  .pom-btn.primary:hover { background: #b9ff66; color: #191a23; }
+
+  /* Config metas */
+  .meta-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 0; border-bottom: 1px solid rgba(25,26,35,0.06);
+  }
+  .meta-row:last-child { border-bottom: none; }
+  .meta-stepper { display: flex; align-items: center; gap: 0.5rem; }
+  .step-btn {
+    width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid rgba(25,26,35,0.15);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; background: white; font-size: 1rem; line-height: 1;
+    transition: all 0.1s;
+  }
+  .step-btn:hover { border-color: #191a23; background: #191a23; color: white; }
+  .step-val { font-weight: 700; min-width: 36px; text-align: center; font-size: 0.9375rem; }
+
+  /* Sessoes log */
+  .log-row {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(25,26,35,0.05); font-size: 0.8125rem;
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; background: #b9ff66; flex-shrink: 0; }
+</style>
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-semibold">Plano de Estudos</h1>
+    <p id="today-label" class="text-dark/45 text-sm mt-0.5">Carregando…</p>
+  </div>
+  <div id="streak-badge" class="hidden items-center gap-2 bg-dark text-white px-4 py-2 rounded-xl text-sm font-semibold">
+    🔥 <span id="streak-num">0</span> dias seguidos
+  </div>
+</div>
+
+<!-- Progress rings -->
+<div class="card mb-6">
+  <div class="flex items-start gap-4 justify-around flex-wrap">
+    <div class="ring-wrap">
+      <div class="ring-label">Questões</div>
+      <svg class="ring-svg" id="ring-q" width="96" height="96" viewBox="0 0 96 96">
+        <circle class="ring-bg" cx="48" cy="48" r="40" stroke-width="8"/>
+        <circle class="ring-fill" id="arc-q" cx="48" cy="48" r="40" stroke-width="8" stroke="#b9ff66" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+      </svg>
+      <div class="ring-val"><span id="q-hoje">0</span></div>
+      <div class="ring-meta">meta: <span id="q-meta">10</span></div>
+    </div>
+    <div class="ring-wrap">
+      <div class="ring-label">Flashcards</div>
+      <svg class="ring-svg" id="ring-f" width="96" height="96" viewBox="0 0 96 96">
+        <circle class="ring-bg" cx="48" cy="48" r="40" stroke-width="8"/>
+        <circle class="ring-fill" id="arc-f" cx="48" cy="48" r="40" stroke-width="8" stroke="#6366f1" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+      </svg>
+      <div class="ring-val"><span id="f-hoje">0</span></div>
+      <div class="ring-meta">meta: <span id="f-meta">20</span></div>
+    </div>
+    <div class="ring-wrap">
+      <div class="ring-label">Minutos</div>
+      <svg class="ring-svg" id="ring-m" width="96" height="96" viewBox="0 0 96 96">
+        <circle class="ring-bg" cx="48" cy="48" r="40" stroke-width="8"/>
+        <circle class="ring-fill" id="arc-m" cx="48" cy="48" r="40" stroke-width="8" stroke="#f59e0b" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+      </svg>
+      <div class="ring-val"><span id="m-hoje">0</span></div>
+      <div class="ring-meta">meta: <span id="m-meta">50</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Pomodoro -->
+<div class="card mb-6">
+  <h2 class="text-base font-semibold mb-5 text-center">Pomodoro</h2>
+  <div id="pom-wrap">
+    <!-- SVG arc timer -->
+    <div class="relative" style="width:200px;margin:0 auto 1rem">
+      <svg id="pom-circle-svg" width="200" height="200" viewBox="0 0 200 200">
+        <circle id="pom-arc-bg" cx="100" cy="100" r="88" stroke-width="10" transform="rotate(-90 100 100)"/>
+        <circle id="pom-arc" cx="100" cy="100" r="88" stroke-width="10" stroke="#b9ff66" stroke-dasharray="552.9" stroke-dashoffset="0" transform="rotate(-90 100 100)"/>
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <div id="pom-time">25:00</div>
+        <div id="pom-phase">Foco</div>
+      </div>
+    </div>
+
+    <div id="pom-cycles">
+      <div class="cycle-dot active" id="cd-1"></div>
+      <div class="cycle-dot" id="cd-2"></div>
+      <div class="cycle-dot" id="cd-3"></div>
+      <div class="cycle-dot" id="cd-4"></div>
+    </div>
+
+    <div id="pom-controls">
+      <button class="pom-btn" id="pom-reset">Reiniciar</button>
+      <button class="pom-btn primary" id="pom-start">Iniciar</button>
+      <button class="pom-btn" id="pom-skip">Pular</button>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+  <!-- Metas config -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-sm">Metas diárias</h3>
+      <button id="btn-salvar-metas" class="text-xs btn-primary py-1.5 px-3">Salvar</button>
+    </div>
+    <div>
+      <div class="meta-row">
+        <div>
+          <div class="font-medium text-sm">Questões</div>
+          <div class="text-xs text-dark/40">Respostas por dia</div>
+        </div>
+        <div class="meta-stepper">
+          <button class="step-btn" data-t="questoes" data-d="-5">−</button>
+          <span class="step-val" id="sv-questoes">10</span>
+          <button class="step-btn" data-t="questoes" data-d="+5">+</button>
+        </div>
+      </div>
+      <div class="meta-row">
+        <div>
+          <div class="font-medium text-sm">Flashcards</div>
+          <div class="text-xs text-dark/40">Revisões por dia</div>
+        </div>
+        <div class="meta-stepper">
+          <button class="step-btn" data-t="flashcards" data-d="-5">−</button>
+          <span class="step-val" id="sv-flashcards">20</span>
+          <button class="step-btn" data-t="flashcards" data-d="+5">+</button>
+        </div>
+      </div>
+      <div class="meta-row">
+        <div>
+          <div class="font-medium text-sm">Minutos</div>
+          <div class="text-xs text-dark/40">Foco ativo por dia</div>
+        </div>
+        <div class="meta-stepper">
+          <button class="step-btn" data-t="minutos" data-d="-10">−</button>
+          <span class="step-val" id="sv-minutos">50</span>
+          <button class="step-btn" data-t="minutos" data-d="+10">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sessions log -->
+  <div class="card">
+    <h3 class="font-semibold text-sm mb-3">Sessões de hoje</h3>
+    <div id="sessoes-log">
+      <p class="text-sm text-dark/35 text-center py-4">Nenhuma sessão ainda</p>
+    </div>
+    <div id="streak-detail" class="mt-4 pt-3 border-t border-dark/08 text-sm text-dark/50 hidden">
+      Recorde: <strong id="streak-max"></strong> dias
+    </div>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('gab_token');
+  if (!token) location.href = '/login';
+
+  const CIRC = 2 * Math.PI * 88; // svg arc circumference (r=88)
+  let metas = { questoes: 10, flashcards: 20, minutos: 50 };
+
+  function setRing(arcId: string, value: number, meta: number) {
+    const pct = Math.min(value / Math.max(meta, 1), 1);
+    const offset = CIRC * (1 - pct);
+    (document.getElementById(arcId) as SVGCircleElement).style.strokeDashoffset = String(offset);
+  }
+
+  async function loadHoje() {
+    const res = await fetch('/api/plano/hoje', { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const d = await res.json();
+
+    metas = d.metas;
+
+    // Update ring displays
+    (document.getElementById('q-hoje') as HTMLElement).textContent = d.questoesHoje;
+    (document.getElementById('f-hoje') as HTMLElement).textContent = d.flashcardsHoje;
+    (document.getElementById('m-hoje') as HTMLElement).textContent = d.minutosHoje;
+    (document.getElementById('q-meta') as HTMLElement).textContent = d.metas.questoes;
+    (document.getElementById('f-meta') as HTMLElement).textContent = d.metas.flashcards;
+    (document.getElementById('m-meta') as HTMLElement).textContent = d.metas.minutos;
+    setTimeout(() => {
+      setRing('arc-q', d.questoesHoje, d.metas.questoes);
+      setRing('arc-f', d.flashcardsHoje, d.metas.flashcards);
+      setRing('arc-m', d.minutosHoje, d.metas.minutos);
+    }, 100);
+
+    // Streak
+    if (d.streak.atual > 0) {
+      const badge = document.getElementById('streak-badge')!;
+      badge.classList.remove('hidden');
+      badge.classList.add('flex');
+      (document.getElementById('streak-num') as HTMLElement).textContent = String(d.streak.atual);
+    }
+    if (d.streak.maximo > 0) {
+      const detail = document.getElementById('streak-detail')!;
+      detail.classList.remove('hidden');
+      (document.getElementById('streak-max') as HTMLElement).textContent = String(d.streak.maximo);
+    }
+
+    // Today label
+    const done = [d.questoesHoje >= d.metas.questoes, d.flashcardsHoje >= d.metas.flashcards, d.minutosHoje >= d.metas.minutos].filter(Boolean).length;
+    document.getElementById('today-label')!.textContent =
+      done === 3 ? '🎉 Todas as metas concluídas!' : `${done}/3 metas concluídas hoje`;
+
+    // Metas steppers
+    for (const tipo of ['questoes','flashcards','minutos'] as const) {
+      (document.getElementById(`sv-${tipo}`) as HTMLElement).textContent = String(d.metas[tipo]);
+    }
+
+    // Sessions log
+    const log = document.getElementById('sessoes-log')!;
+    if (d.sessoesHoje.length === 0) {
+      log.innerHTML = '<p class="text-sm text-dark/35 text-center py-4">Nenhuma sessão ainda</p>';
+    } else {
+      const fmt = (s: string) => new Date(s).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      log.innerHTML = d.sessoesHoje.map((s: any) =>
+        `<div class="log-row">
+          <span class="log-dot"></span>
+          <span class="font-medium">${s.duracao_min} min</span>
+          <span class="text-dark/35">${fmt(s.iniciado_em)}</span>
+          ${s.nota ? `<span class="text-dark/50 text-xs flex-1 truncate">${s.nota}</span>` : ''}
+        </div>`
+      ).join('');
+    }
+  }
+
+  // ── Metas steppers ──
+  const stepVals: Record<string, number> = { questoes: 10, flashcards: 20, minutos: 50 };
+
+  document.querySelectorAll('.step-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tipo = (btn as HTMLElement).dataset.t!;
+      const delta = parseInt((btn as HTMLElement).dataset.d!);
+      stepVals[tipo] = Math.max(0, (stepVals[tipo] || 0) + delta);
+      (document.getElementById(`sv-${tipo}`) as HTMLElement).textContent = String(stepVals[tipo]);
+    });
+  });
+
+  document.getElementById('btn-salvar-metas')!.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-salvar-metas') as HTMLButtonElement;
+    btn.textContent = 'Salvando…'; btn.disabled = true;
+    await fetch('/api/plano/metas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(stepVals),
+    });
+    btn.textContent = 'Salvo ✓'; btn.disabled = false;
+    setTimeout(() => { btn.textContent = 'Salvar'; }, 2000);
+    loadHoje();
+  });
+
+  // ── Pomodoro ──
+  const DURATIONS = { foco: 25, curta: 5, longa: 15 };
+  type Phase = 'foco' | 'curta' | 'longa';
+  const PHASE_NAMES: Record<Phase, string> = { foco: 'Foco', curta: 'Pausa Curta', longa: 'Pausa Longa' };
+
+  let phase: Phase = 'foco';
+  let cycleCount = 0;
+  let remaining = DURATIONS.foco * 60;
+  let total     = DURATIONS.foco * 60;
+  let running   = false;
+  let timer: ReturnType<typeof setInterval> | null = null;
+  let sessionStart: Date | null = null;
+
+  function pomDisplay() {
+    const m = Math.floor(remaining / 60).toString().padStart(2, '0');
+    const s = (remaining % 60).toString().padStart(2, '0');
+    (document.getElementById('pom-time') as HTMLElement).textContent = `${m}:${s}`;
+    (document.getElementById('pom-phase') as HTMLElement).textContent = PHASE_NAMES[phase];
+
+    // Arc
+    const pct = remaining / total;
+    const offset = CIRC * (1 - pct);
+    const arc = document.getElementById('pom-arc') as SVGCircleElement;
+    arc.style.stroke = phase === 'foco' ? '#b9ff66' : phase === 'curta' ? '#6366f1' : '#f59e0b';
+    arc.style.strokeDashoffset = String(offset * (552.9 / CIRC));
+
+    // Cycle dots
+    for (let i = 1; i <= 4; i++) {
+      const dot = document.getElementById(`cd-${i}`)!;
+      dot.className = 'cycle-dot' + (i <= cycleCount ? ' done' : i === cycleCount + 1 ? ' active' : '');
+    }
+  }
+
+  function nextPhase() {
+    if (phase === 'foco') {
+      cycleCount = Math.min(cycleCount + 1, 4);
+      if (cycleCount >= 4) {
+        phase = 'longa';
+        cycleCount = 0;
+      } else {
+        phase = 'curta';
+      }
+    } else {
+      phase = 'foco';
+    }
+    remaining = DURATIONS[phase] * 60;
+    total     = remaining;
+    pomDisplay();
+  }
+
+  document.getElementById('pom-start')!.addEventListener('click', () => {
+    if (running) {
+      running = false;
+      clearInterval(timer!);
+      (document.getElementById('pom-start') as HTMLElement).textContent = 'Retomar';
+    } else {
+      running = true;
+      if (!sessionStart && phase === 'foco') sessionStart = new Date();
+      (document.getElementById('pom-start') as HTMLElement).textContent = 'Pausar';
+      timer = setInterval(tick, 1000);
+    }
+  });
+
+  document.getElementById('pom-reset')!.addEventListener('click', reset);
+  document.getElementById('pom-skip')!.addEventListener('click', () => {
+    if (running) { clearInterval(timer!); running = false; }
+    if (phase === 'foco' && sessionStart) logSession();
+    nextPhase();
+    (document.getElementById('pom-start') as HTMLElement).textContent = 'Iniciar';
+  });
+
+  function tick() {
+    if (remaining <= 0) {
+      clearInterval(timer!); running = false;
+      (document.getElementById('pom-start') as HTMLElement).textContent = 'Iniciar';
+      if (phase === 'foco') {
+        logSession();
+        flashComplete();
+      }
+      nextPhase();
+      return;
+    }
+    remaining--;
+    pomDisplay();
+  }
+
+  function reset() {
+    if (timer) clearInterval(timer);
+    running = false; phase = 'foco'; cycleCount = 0;
+    remaining = DURATIONS.foco * 60; total = remaining; sessionStart = null;
+    (document.getElementById('pom-start') as HTMLElement).textContent = 'Iniciar';
+    pomDisplay();
+  }
+
+  async function logSession() {
+    const dur = sessionStart
+      ? Math.round((Date.now() - sessionStart.getTime()) / 60000)
+      : DURATIONS.foco;
+    sessionStart = null;
+    if (dur < 1) return;
+    await fetch('/api/plano/pomodoro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ duracao_min: dur }),
+    });
+    loadHoje();
+  }
+
+  function flashComplete() {
+    document.body.style.background = '#b9ff66';
+    setTimeout(() => { document.body.style.background = ''; }, 300);
+  }
+
+  pomDisplay();
+  loadHoje();
+</script>
+</MainLayout>

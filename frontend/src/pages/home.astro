@@ -64,6 +64,32 @@ import MainLayout from '../layouts/MainLayout.astro';
   </a>
 </div>
 
+<!-- Hoje -->
+<div id="hoje-bar" class="hidden mb-6">
+  <div class="flex items-center gap-3 mb-2.5">
+    <span id="streak-home" class="hidden items-center gap-1.5 bg-dark text-white px-3 py-1 rounded-lg text-xs font-bold">🔥 <span id="streak-home-n">0</span> dias</span>
+    <span class="text-sm font-semibold text-dark/70">Hoje</span>
+    <span id="hoje-status" class="text-xs text-dark/40"></span>
+  </div>
+  <div class="grid grid-cols-3 gap-3">
+    <div class="stat-tile !py-3">
+      <div class="text-lg font-bold text-dark"><span id="hq-val">0</span><span class="text-sm font-normal text-dark/35">/<span id="hq-meta">10</span></span></div>
+      <div class="text-xs text-dark/45 mt-0.5">Questões</div>
+      <div class="h-1 rounded-full bg-dark/07 mt-2 overflow-hidden"><div id="hq-bar" class="h-full rounded-full bg-green transition-all" style="width:0%"></div></div>
+    </div>
+    <div class="stat-tile !py-3">
+      <div class="text-lg font-bold text-dark"><span id="hf-val">0</span><span class="text-sm font-normal text-dark/35">/<span id="hf-meta">20</span></span></div>
+      <div class="text-xs text-dark/45 mt-0.5">Flashcards</div>
+      <div class="h-1 rounded-full bg-dark/07 mt-2 overflow-hidden"><div id="hf-bar" class="h-full rounded-full bg-indigo-400 transition-all" style="width:0%"></div></div>
+    </div>
+    <div class="stat-tile !py-3">
+      <div class="text-lg font-bold text-dark"><span id="hm-val">0</span><span class="text-sm font-normal text-dark/35">/<span id="hm-meta">50</span></span></div>
+      <div class="text-xs text-dark/45 mt-0.5">Minutos</div>
+      <div class="h-1 rounded-full bg-dark/07 mt-2 overflow-hidden"><div id="hm-bar" class="h-full rounded-full bg-amber-400 transition-all" style="width:0%"></div></div>
+    </div>
+  </div>
+</div>
+
 <!-- Stats grid -->
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
   <div class="stat-tile">
@@ -203,5 +229,35 @@ import MainLayout from '../layouts/MainLayout.astro';
     }
   }
 
+  async function loadHoje() {
+    const res = await fetch('/api/plano/hoje', { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const d = await res.json();
+
+    document.getElementById('hoje-bar')!.classList.remove('hidden');
+
+    const setBar = (valId: string, metaId: string, barId: string, v: number, m: number) => {
+      (document.getElementById(valId) as HTMLElement).textContent = String(v);
+      (document.getElementById(metaId) as HTMLElement).textContent = String(m);
+      const pct = Math.min(100, m > 0 ? Math.round(v / m * 100) : 0);
+      (document.getElementById(barId) as HTMLElement).style.width = pct + '%';
+    };
+    setBar('hq-val','hq-meta','hq-bar', d.questoesHoje, d.metas.questoes);
+    setBar('hf-val','hf-meta','hf-bar', d.flashcardsHoje, d.metas.flashcards);
+    setBar('hm-val','hm-meta','hm-bar', d.minutosHoje, d.metas.minutos);
+
+    if (d.streak.atual > 0) {
+      const el = document.getElementById('streak-home')!;
+      el.classList.remove('hidden');
+      el.classList.add('inline-flex');
+      (document.getElementById('streak-home-n') as HTMLElement).textContent = String(d.streak.atual);
+    }
+
+    const done = [d.questoesHoje >= d.metas.questoes, d.flashcardsHoje >= d.metas.flashcards, d.minutosHoje >= d.metas.minutos].filter(Boolean).length;
+    (document.getElementById('hoje-status') as HTMLElement).textContent =
+      done === 3 ? '🎉 Todas as metas concluídas!' : `${done}/3 metas`;
+  }
+
   loadStats();
+  loadHoje();
 </script>
