@@ -5,6 +5,8 @@ import { dirname, join } from 'path';
 import authRouter from './routes/auth.js';
 import progressRouter from './routes/progress.js';
 import statsRouter from './routes/stats.js';
+import cursosRouter from './routes/cursos.js';
+import concursosRouter from './routes/concursos.js';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const STATIC = join(__dir, '..', '..', 'frontend', 'dist');
@@ -17,6 +19,8 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/progress', progressRouter);
 app.use('/api/stats', statsRouter);
+app.use('/api/cursos', cursosRouter);
+app.use('/api/concursos', concursosRouter);
 
 // Serve Astro build (produção)
 app.use(express.static(STATIC));
