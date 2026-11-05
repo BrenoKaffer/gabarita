@@ -182,26 +182,20 @@ import MainLayout from '../layouts/MainLayout.astro';
 
   function render() {
     document.title = `${curso.titulo} · Gabarita`;
+    (window as any).setBreadcrumb?.(['Gabarita', curso.titulo]);
 
     // Stats
     let total = 0, done = 0;
     for (const m of curso.modulos) { total += m.aulas.length; done += m.aulas.filter((a: any) => a.concluida).length; }
     const pct = total > 0 ? Math.round(done / total * 100) : 0;
 
-    // Header
-    const headerBg = curso.capa_base64
-      ? `position:relative;overflow:hidden;min-height:120px`
-      : `background:${curso.cor || '#6366f1'}`;
-    const headerImg = curso.capa_base64
-      ? `<img src="${curso.capa_base64}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" alt="" /><div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.15),rgba(0,0,0,0.65))"></div>`
-      : '';
-    const headerContent = `<div style="position:relative" class="px-6 py-5">
-        <h1 class="text-white text-xl font-semibold" style="text-shadow:${curso.capa_base64 ? '0 1px 4px rgba(0,0,0,0.5)' : 'none'}">${curso.titulo}</h1>
-        ${curso.descricao ? `<p style="color:rgba(255,255,255,0.75);text-shadow:${curso.capa_base64 ? '0 1px 3px rgba(0,0,0,0.4)' : 'none'}" class="text-sm mt-1">${curso.descricao}</p>` : ''}
-      </div>`;
+    // Header (sem banner — só título/descrição + progresso)
     document.getElementById('curso-header')!.innerHTML = `
-      <div style="${headerBg}">${headerImg}${headerContent}</div>
-      <div class="bg-white px-6 py-3 flex items-center gap-4">
+      <div class="px-6 py-5 bg-white">
+        <h1 class="text-dark text-xl font-semibold">${curso.titulo}</h1>
+        ${curso.descricao ? `<p class="text-dark/50 text-sm mt-1">${curso.descricao}</p>` : ''}
+      </div>
+      <div class="bg-white px-6 py-3 flex items-center gap-4 border-t border-dark/8">
         <div class="flex-1 h-2 rounded-full overflow-hidden" style="background:rgba(25,26,35,0.07)">
           <div class="h-full bg-green rounded-full transition-all" style="width:${pct}%"></div>
         </div>

@@ -49,11 +49,6 @@ import MainLayout from '../layouts/MainLayout.astro';
     margin-top: 0.3rem;
   }
 
-  /* Footer abaixo da capa */
-  .card-footer { padding: 0.65rem 0.875rem 0.75rem; }
-  .prog-wrap { height: 3px; background: rgba(25,26,35,0.07); border-radius: 2px; overflow: hidden; }
-  .prog-fill { height: 100%; background: #b9ff66; border-radius: 2px; transition: width 0.4s; }
-
   /* Modal */
   .overlay { position: fixed; inset: 0; background: rgba(25,26,35,0.5); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem; overflow-y: auto; }
   .overlay.show { display: flex; }
@@ -266,7 +261,6 @@ import MainLayout from '../layouts/MainLayout.astro';
     if (!cursos.length) { empty.style.display = 'flex'; return; }
 
     grid.innerHTML = cursos.map((c: any) => {
-      const pct = c.total_aulas > 0 ? Math.round(c.aulas_concluidas / c.total_aulas * 100) : 0;
       const coverBg = c.capa_base64
         ? `background:#111`
         : `background:${c.cor || '#6366f1'}`;
@@ -282,9 +276,6 @@ import MainLayout from '../layouts/MainLayout.astro';
             <div class="card-cover-title">${c.titulo}</div>
             <div class="card-cover-meta">${meta}</div>
           </div>
-        </div>
-        <div class="card-footer">
-          <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
         </div>
       </a>`;
     }).join('');

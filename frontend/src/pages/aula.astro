@@ -268,6 +268,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 
   function renderMeta() {
     document.title = `${aula.titulo} · Gabarita`;
+    (window as any).setBreadcrumb?.(['Gabarita', aula.curso_titulo, aula.modulo_titulo, aula.titulo]);
     (document.getElementById('aula-titulo') as HTMLElement).textContent = aula.titulo;
     (document.getElementById('meta-breadcrumb') as HTMLElement).textContent =
       `${aula.curso_titulo}  ·  ${aula.modulo_titulo}`;
