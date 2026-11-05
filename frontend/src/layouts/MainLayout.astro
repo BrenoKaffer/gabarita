@@ -321,6 +321,25 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
       <main class="flex-1 p-4 sm:p-6 overflow-y-auto">
         <slot />
       </main>
+
+      <!-- Status bar -->
+      <footer class="shrink-0 h-8 bg-white border-t border-dark/10 flex items-center justify-between px-4 sm:px-6 text-[11px] text-dark/40 select-none">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <span class="flex items-center gap-1.5 shrink-0">
+            <span class="w-1.5 h-1.5 rounded-full bg-green"></span>
+            Sistema ativo
+          </span>
+          <span class="text-dark/15 shrink-0">·</span>
+          <span id="footer-aproveitamento" class="shrink-0">—</span>
+          <span class="text-dark/15 shrink-0 hidden sm:inline">·</span>
+          <span id="footer-countdown" class="truncate hidden sm:inline">—</span>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span id="footer-clock" class="hidden sm:inline tabular-nums">—</span>
+          <span class="text-dark/15 hidden sm:inline">·</span>
+          <span>Gabarita</span>
+        </div>
+      </footer>
     </div>
   </div>
 
@@ -451,6 +470,9 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
           daysTo(c.data_prova) < daysTo(best.data_prova) ? c : best);
         const d = daysTo(nearest.data_prova);
         ctEl.textContent = isFinite(d) ? `${d} dias · ${nearest.nome}` : nearest.nome;
+
+        const fcEl = document.getElementById('footer-countdown');
+        if (fcEl) fcEl.textContent = isFinite(d) ? `${nearest.nome} em ${d} dias` : nearest.nome;
       }
 
       // Dropdown de próximas datas
@@ -494,6 +516,9 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
       document.getElementById('sb-bar')!.style.width  = pct + '%';
       document.getElementById('sb-resp')!.textContent = `${overall?.respondidas || 0} respondidas`;
       document.getElementById('sb-acc' )!.textContent = `${overall?.acertos || 0} acertos`;
+
+      const faEl = document.getElementById('footer-aproveitamento');
+      if (faEl) faEl.textContent = `Aproveitamento ${pct}%`;
     } catch {}
   }
 
@@ -552,6 +577,18 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
 
   loadSidebarStats();
   loadNotifications();
+
+  // ── Relógio do rodapé ──
+  function tickClock() {
+    const el = document.getElementById('footer-clock');
+    if (!el) return;
+    const now = new Date();
+    const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const date = now.toLocaleDateString('pt-BR');
+    el.textContent = `${time} · ${date}`;
+  }
+  tickClock();
+  setInterval(tickClock, 15000);
 </script>
 </body>
 </html>
