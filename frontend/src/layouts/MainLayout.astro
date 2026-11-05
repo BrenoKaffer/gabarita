@@ -60,7 +60,7 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
         </a>
 
         <!-- Aprendizagem -->
-        <div class="rounded-xl overflow-hidden" style="background:rgba(255,255,255,0.05)">
+        <div class="rounded-xl overflow-hidden">
           <p class="text-white/35 text-[9px] font-semibold uppercase tracking-widest px-3 pt-2.5 pb-1">Aprendizagem</p>
           <div class="flex flex-col gap-0.5 px-1 pb-1.5">
             <a href="/cursos" data-nav="cursos" class="sidebar-link">
@@ -104,7 +104,7 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
         </div>
 
         <!-- Planejamento -->
-        <div class="rounded-xl overflow-hidden" style="background:rgba(255,255,255,0.05)">
+        <div class="rounded-xl overflow-hidden">
           <p class="text-white/35 text-[9px] font-semibold uppercase tracking-widest px-3 pt-2.5 pb-1">Planejamento</p>
           <div class="flex flex-col gap-0.5 px-1 pb-1.5">
             <a href="/plano" data-nav="plano" class="sidebar-link">
@@ -129,7 +129,7 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
         </div>
 
         <!-- Conhecimento -->
-        <div class="rounded-xl overflow-hidden" style="background:rgba(255,255,255,0.05)">
+        <div class="rounded-xl overflow-hidden">
           <p class="text-white/35 text-[9px] font-semibold uppercase tracking-widest px-3 pt-2.5 pb-1">Conhecimento</p>
           <div class="flex flex-col gap-0.5 px-1 pb-1.5">
             <a href="/biblioteca" data-nav="biblioteca" class="sidebar-link">
@@ -154,7 +154,7 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
         </div>
 
         <!-- Desempenho -->
-        <div class="rounded-xl overflow-hidden" style="background:rgba(255,255,255,0.05)">
+        <div class="rounded-xl overflow-hidden">
           <p class="text-white/35 text-[9px] font-semibold uppercase tracking-widest px-3 pt-2.5 pb-1">Desempenho</p>
           <div class="flex flex-col gap-0.5 px-1 pb-1.5">
             <a href="/stats" data-nav="stats" class="sidebar-link">
@@ -179,7 +179,7 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
         </div>
 
         <!-- Concursos -->
-        <div class="rounded-xl overflow-hidden" style="background:rgba(255,255,255,0.05)">
+        <div class="rounded-xl overflow-hidden">
           <p class="text-white/35 text-[9px] font-semibold uppercase tracking-widest px-3 pt-2.5 pb-1">Concursos</p>
           <div class="flex flex-col gap-0.5 px-1 pb-1.5">
             <a href="/meus-concursos" data-nav="meus-concursos" class="sidebar-link">
@@ -260,10 +260,23 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
 
         <div class="flex items-center gap-3">
           <!-- Countdown -->
-          <div id="countdown-chip"
-            class="hidden sm:flex items-center gap-1.5 bg-dark/5 rounded-full px-3 py-1 text-xs font-medium text-dark/70">
-            <span class="w-1.5 h-1.5 rounded-full bg-green"></span>
-            <span id="countdown-text">…</span>
+          <div class="relative" id="countdown-wrap">
+            <div id="countdown-chip"
+              class="hidden sm:flex items-center gap-1.5 bg-dark/5 hover:bg-dark/10 rounded-full px-3 py-1 text-xs font-medium text-dark/70 transition-colors cursor-pointer">
+              <span class="w-1.5 h-1.5 rounded-full bg-green"></span>
+              <span id="countdown-text">…</span>
+            </div>
+            <!-- Dropdown -->
+            <div id="countdown-dropdown"
+              class="hidden absolute right-0 mt-2 w-64 bg-white border border-dark/10 rounded-card shadow-card z-50 overflow-hidden">
+              <div class="px-4 py-2.5 border-b border-dark/10">
+                <span class="font-semibold text-sm">Próximas datas</span>
+              </div>
+              <div id="countdown-list" class="max-h-64 overflow-y-auto divide-y divide-dark/5">
+                <div class="px-4 py-3 text-sm text-dark/40">Carregando…</div>
+              </div>
+              <a href="/agenda" class="block px-4 py-2.5 text-center text-sm font-medium text-dark border-t border-dark/10 hover:bg-dark/5 transition-colors">Ver todos</a>
+            </div>
           </div>
 
           <!-- Divider -->
@@ -439,6 +452,31 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
         const d = daysTo(nearest.data_prova);
         ctEl.textContent = isFinite(d) ? `${d} dias · ${nearest.nome}` : nearest.nome;
       }
+
+      // Dropdown de próximas datas
+      const cdList = document.getElementById('countdown-list');
+      if (cdList) {
+        if (!list.length) {
+          cdList.innerHTML = `<div class="px-4 py-3 text-sm text-dark/40">Nenhuma data cadastrada</div>`;
+        } else {
+          const sorted = [...list].sort((a: any, b: any) => daysTo(a.data_prova) - daysTo(b.data_prova));
+          cdList.innerHTML = sorted.slice(0, 5).map((c: any) => {
+            const d = daysTo(c.data_prova);
+            const dStr = isFinite(d) ? `${d}d` : '';
+            const dateStr = c.data_prova
+              ? new Date(c.data_prova + 'T12:00:00').toLocaleDateString('pt-BR')
+              : '';
+            return `<div class="px-4 py-2.5 flex items-center gap-2.5">
+              <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background:${c.cor || '#b9ff66'}"></span>
+              <div class="flex-1 min-w-0">
+                <p class="text-dark text-xs font-medium truncate">${c.nome}</p>
+                ${dateStr ? `<p class="text-dark/35 text-[10px]">${dateStr}</p>` : ''}
+              </div>
+              <span class="text-[10px] font-semibold shrink-0" style="color:${c.cor || '#191a23'}">${dStr}</span>
+            </div>`;
+          }).join('');
+        }
+      }
     } catch {}
   }
   loadConcursos();
@@ -501,8 +539,14 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
     e.stopPropagation();
     document.getElementById('notif-dropdown')?.classList.toggle('hidden');
   });
-  document.addEventListener('click', () =>
-    document.getElementById('notif-dropdown')?.classList.add('hidden'));
+  document.getElementById('countdown-chip')?.addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('countdown-dropdown')?.classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => {
+    document.getElementById('notif-dropdown')?.classList.add('hidden');
+    document.getElementById('countdown-dropdown')?.classList.add('hidden');
+  });
   document.getElementById('btn-mark-read')?.addEventListener('click', () =>
     document.getElementById('notif-badge')?.classList.add('hidden'));
 
