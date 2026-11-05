@@ -5,8 +5,6 @@ import MainLayout from '../layouts/MainLayout.astro';
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.bubble.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
-<!-- Resize de imagem (arrastar para redimensionar) + alinhamento esquerda/centro/direita -->
-<script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
 <!-- marked.js: só usado como fallback para aulas antigas salvas em Markdown puro -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
 
@@ -61,7 +59,34 @@ import MainLayout from '../layouts/MainLayout.astro';
     border-radius: 10px;
     margin: 0.5rem 0;
     display: block;
+    cursor: pointer;
+    transition: outline 0.1s;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
   }
+  #editor .ql-editor img.img-selected { outline-color: #b9ff66; }
+  #editor.locked .ql-editor img { cursor: default; }
+
+  /* Popup de alinhamento/tamanho da imagem */
+  #img-controls {
+    position: fixed;
+    z-index: 100;
+    background: #191a23;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    padding: 0.4rem 0.6rem;
+  }
+  #img-controls.hidden { display: none; }
+  .img-controls-row { display: flex; align-items: center; gap: 0.35rem; }
+  .img-ctrl-btn {
+    padding: 0.35rem; border-radius: 7px; color: rgba(255,255,255,0.6);
+    transition: all 0.15s; background: none; border: none; cursor: pointer;
+  }
+  .img-ctrl-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+  .img-ctrl-btn.active { color: #191a23; background: #b9ff66; }
+  .img-ctrl-sep { width: 1px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 0.15rem; }
+  #img-size-slider { width: 90px; accent-color: #b9ff66; cursor: pointer; }
+  .img-ctrl-pct { font-size: 0.7rem; color: rgba(255,255,255,0.6); width: 2.25rem; text-align: right; font-variant-numeric: tabular-nums; }
 
   #btn-concluir.done {
     background: #b9ff66; color: #191a23; border-color: #191a23;
@@ -191,6 +216,25 @@ import MainLayout from '../layouts/MainLayout.astro';
 
 </div>
 
+<!-- Popup de controle da imagem: alinhamento + tamanho -->
+<div id="img-controls" class="hidden">
+  <div class="img-controls-row">
+    <button type="button" class="img-ctrl-btn" data-align="left" title="Alinhar à esquerda">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h8.25m-8.25 5.25h16.5"/></svg>
+    </button>
+    <button type="button" class="img-ctrl-btn" data-align="center" title="Centralizar">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M7.5 12h9m-9 5.25h9"/></svg>
+    </button>
+    <button type="button" class="img-ctrl-btn" data-align="right" title="Alinhar à direita">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M11.25 12h8.25m-16.5 5.25h16.5"/></svg>
+    </button>
+    <span class="img-ctrl-sep"></span>
+    <svg class="w-3.5 h-3.5 text-dark/40 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h18M16.5 3L21 7.5m0 0L16.5 12M21 7.5H3"/></svg>
+    <input type="range" id="img-size-slider" min="20" max="100" step="5" value="100" />
+    <span id="img-size-label" class="img-ctrl-pct">100%</span>
+  </div>
+</div>
+
 <script>
   const token = localStorage.getItem('gab_token');
   const aid = new URLSearchParams(location.search).get('id');
@@ -203,9 +247,6 @@ import MainLayout from '../layouts/MainLayout.astro';
 
   function initQuill() {
     const Quill = (window as any).Quill;
-    const ImageResize = (window as any).ImageResize;
-    if (ImageResize) Quill.register('modules/imageResize', ImageResize.default || ImageResize);
-
     quill = new Quill('#editor', {
       theme: 'bubble',
       modules: {
@@ -213,7 +254,6 @@ import MainLayout from '../layouts/MainLayout.astro';
           container: '#toolbar',
           handlers: { image: () => (document.getElementById('img-input') as HTMLInputElement).click() },
         },
-        imageResize: ImageResize ? { modules: ['Resize', 'DisplaySize', 'Toolbar'] } : undefined,
       },
     });
     quill.disable();
@@ -224,6 +264,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     applyWidth();
     applyColumns();
     applySpacing();
+    setupImageControls();
   }
 
   // ── Inserir imagem (upload + compressão client-side, como a capa do curso) ──
@@ -276,6 +317,107 @@ import MainLayout from '../layouts/MainLayout.astro';
       }
     }
   });
+
+  // ── Alinhamento e tamanho da imagem (popup ao clicar) ──
+  let selectedImg: HTMLImageElement | null = null;
+
+  function applyImgAlign(img: HTMLImageElement, align: string) {
+    img.dataset.align = align;
+    if (align === 'left') {
+      img.style.float = 'left';
+      img.style.display = 'inline-block';
+      img.style.margin = '0.25rem 1.25rem 0.75rem 0';
+    } else if (align === 'right') {
+      img.style.float = 'right';
+      img.style.display = 'inline-block';
+      img.style.margin = '0.25rem 0 0.75rem 1.25rem';
+    } else {
+      img.style.float = 'none';
+      img.style.display = 'block';
+      img.style.margin = '0.75rem auto';
+    }
+  }
+
+  function setupImageControls() {
+    const editorEl = document.getElementById('editor')!;
+    const popup = document.getElementById('img-controls')!;
+    const slider = document.getElementById('img-size-slider') as HTMLInputElement;
+    const pctLabel = document.getElementById('img-size-label')!;
+    const alignBtns = Array.from(document.querySelectorAll<HTMLElement>('.img-ctrl-btn[data-align]'));
+
+    function positionPopup(img: HTMLImageElement) {
+      const rect = img.getBoundingClientRect();
+      const pw = popup.offsetWidth, ph = popup.offsetHeight;
+      let top = rect.top - ph - 10;
+      if (top < 8) top = Math.min(rect.bottom + 10, window.innerHeight - ph - 8);
+      let left = rect.left + rect.width / 2 - pw / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+      popup.style.top = `${top}px`;
+      popup.style.left = `${left}px`;
+    }
+
+    function showPopupFor(img: HTMLImageElement) {
+      selectedImg?.classList.remove('img-selected');
+      selectedImg = img;
+      img.classList.add('img-selected');
+
+      const align = img.dataset.align || 'left';
+      alignBtns.forEach(b => b.classList.toggle('active', b.dataset.align === align));
+
+      const containerWidth = (img.closest('.ql-editor') as HTMLElement).clientWidth || 1;
+      const pxWidth = img.style.width?.includes('%')
+        ? Math.round((parseFloat(img.style.width) / 100) * containerWidth)
+        : (parseFloat(img.style.width) || img.getBoundingClientRect().width);
+      const pct = Math.min(100, Math.max(20, Math.round(pxWidth / containerWidth * 100)));
+      slider.value = String(pct);
+      pctLabel.textContent = pct + '%';
+
+      popup.classList.remove('hidden');
+      positionPopup(img);
+    }
+
+    function hidePopup() {
+      selectedImg?.classList.remove('img-selected');
+      selectedImg = null;
+      popup.classList.add('hidden');
+    }
+
+    editorEl.addEventListener('click', (e) => {
+      if (locked) return;
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG') {
+        e.stopPropagation();
+        showPopupFor(target as HTMLImageElement);
+      } else if (!popup.contains(target)) {
+        hidePopup();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (!popup.contains(t) && t.tagName !== 'IMG') hidePopup();
+    });
+
+    alignBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!selectedImg) return;
+        applyImgAlign(selectedImg, btn.dataset.align!);
+        alignBtns.forEach(b => b.classList.toggle('active', b === btn));
+        scheduleSave();
+      });
+    });
+
+    slider.addEventListener('input', () => {
+      if (!selectedImg) return;
+      pctLabel.textContent = slider.value + '%';
+      selectedImg.style.width = slider.value + '%';
+      selectedImg.style.height = 'auto';
+      positionPopup(selectedImg);
+    });
+    slider.addEventListener('change', () => scheduleSave());
+
+    window.addEventListener('scroll', () => { if (selectedImg) positionPopup(selectedImg); }, true);
+    window.addEventListener('resize', () => { if (selectedImg) positionPopup(selectedImg); });
+  }
 
   // ── Largura do texto: centralizado (padrão) ou total, como no Notion ──
   const btnWidth = document.getElementById('btn-width') as HTMLButtonElement;
@@ -375,6 +517,11 @@ import MainLayout from '../layouts/MainLayout.astro';
     document.getElementById('lock-icon-view')!.classList.toggle('hidden', locked);
     document.getElementById('lock-icon-edit')!.classList.toggle('hidden', !locked);
     document.getElementById('lock-label')!.textContent = locked ? 'Editar' : 'Visualizar';
+    if (locked) {
+      selectedImg?.classList.remove('img-selected');
+      selectedImg = null;
+      document.getElementById('img-controls')!.classList.add('hidden');
+    }
   }
   document.getElementById('btn-lock')!.addEventListener('click', () => setLocked(!locked));
 
