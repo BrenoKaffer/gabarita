@@ -18,15 +18,38 @@ import MainLayout from '../layouts/MainLayout.astro';
     font-size: 1rem;
     line-height: 1.8;
     padding: 1rem max(1.5rem, calc(50% - 430px)) 4rem;
+    transition: padding 0.2s;
   }
   #editor.locked .ql-editor { cursor: default; }
   #editor .ql-editor.ql-blank::before {
     content: none;
   }
 
+  /* Largura do texto — centralizado (padrão) ou largura total, como no Notion */
+  #editor .ql-editor.full-width {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  /* Colunas */
+  #editor .ql-editor.cols-2 {
+    column-count: 2;
+    column-gap: 3rem;
+  }
+  #editor .ql-editor.cols-2 h1,
+  #editor .ql-editor.cols-2 h2,
+  #editor .ql-editor.cols-2 h3,
+  #editor .ql-editor.cols-2 blockquote,
+  #editor .ql-editor.cols-2 li {
+    break-inside: avoid;
+  }
+
   #btn-concluir.done {
     background: #b9ff66; color: #191a23; border-color: #191a23;
   }
+  .layout-btn { padding: 0.5rem; border-radius: 10px; color: rgba(25,26,35,0.4); transition: all 0.15s; }
+  .layout-btn:hover { color: #191a23; background: rgba(25,26,35,0.05); }
+  .layout-btn.active { color: #191a23; background: rgba(185,255,102,0.35); }
   #save-status { transition: opacity 0.2s; }
 </style>
 
@@ -39,6 +62,19 @@ import MainLayout from '../layouts/MainLayout.astro';
     <span id="back-label">Voltar</span>
   </a>
   <div class="flex items-center gap-3">
+    <div class="flex items-center gap-0.5">
+      <button id="btn-width" class="layout-btn" title="Largura do texto: centralizado / total">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/>
+        </svg>
+      </button>
+      <button id="btn-columns" class="layout-btn" title="Dividir em colunas">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="w-px h-5 bg-dark/10"></div>
     <span id="save-status" class="text-xs text-dark/35"></span>
     <button id="btn-concluir" class="btn-secondary text-sm py-2 px-4">Marcar concluída</button>
     <button id="btn-lock" class="btn-primary text-sm py-2 px-4 flex items-center gap-1.5">
@@ -71,6 +107,12 @@ import MainLayout from '../layouts/MainLayout.astro';
         <option value="3"></option>
         <option value="0" selected></option>
       </select>
+      <select class="ql-size">
+        <option value="small"></option>
+        <option selected></option>
+        <option value="large"></option>
+        <option value="huge"></option>
+      </select>
     </span>
     <span class="ql-formats">
       <button class="ql-bold"></button>
@@ -93,6 +135,14 @@ import MainLayout from '../layouts/MainLayout.astro';
         <option value="#2563eb"></option>
         <option value="#16a34a"></option>
         <option value="#d97706"></option>
+      </select>
+    </span>
+    <span class="ql-formats">
+      <select class="ql-align">
+        <option selected></option>
+        <option value="center"></option>
+        <option value="right"></option>
+        <option value="justify"></option>
       </select>
     </span>
     <span class="ql-formats">
@@ -129,7 +179,35 @@ import MainLayout from '../layouts/MainLayout.astro';
       if (loading || source !== 'user') return;
       scheduleSave();
     });
+    applyWidth();
+    applyColumns();
   }
+
+  // ── Largura do texto: centralizado (padrão) ou total, como no Notion ──
+  const btnWidth = document.getElementById('btn-width') as HTMLButtonElement;
+  let fullWidth = localStorage.getItem('gab_aula_full_width') === '1';
+  function applyWidth() {
+    document.querySelector('.ql-editor')?.classList.toggle('full-width', fullWidth);
+    btnWidth.classList.toggle('active', fullWidth);
+  }
+  btnWidth.addEventListener('click', () => {
+    fullWidth = !fullWidth;
+    localStorage.setItem('gab_aula_full_width', fullWidth ? '1' : '0');
+    applyWidth();
+  });
+
+  // ── Dividir em colunas ──
+  const btnColumns = document.getElementById('btn-columns') as HTMLButtonElement;
+  let columns = localStorage.getItem('gab_aula_columns') === '1';
+  function applyColumns() {
+    document.querySelector('.ql-editor')?.classList.toggle('cols-2', columns);
+    btnColumns.classList.toggle('active', columns);
+  }
+  btnColumns.addEventListener('click', () => {
+    columns = !columns;
+    localStorage.setItem('gab_aula_columns', columns ? '1' : '0');
+    applyColumns();
+  });
 
   async function load() {
     const res = await fetch(`/api/cursos/aulas/${aid}`, { headers: { Authorization: `Bearer ${token}` } });
