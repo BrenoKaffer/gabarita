@@ -9,26 +9,35 @@ import MainLayout from '../layouts/MainLayout.astro';
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
 
 <style is:global>
-  #editor-card {
-    max-width: 740px;
-    border: 1.5px solid rgba(25,26,35,0.1);
-    border-radius: 16px;
-    overflow: hidden;
+  /* A tela toda é a área de escrita — sem moldura de "janela" de rich text */
+  #editor-card { background: white; }
+
+  #toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
     background: white;
   }
   #toolbar.locked { display: none; }
+
+  .ql-toolbar.ql-snow {
+    border: none;
+    border-bottom: 1.5px solid rgba(25,26,35,0.08);
+    padding-left: max(1.5rem, calc(50% - 430px));
+    padding-right: max(1.5rem, calc(50% - 430px));
+  }
+  .ql-container.ql-snow { border: none; }
+
   #editor .ql-editor {
-    min-height: 420px;
-    font-size: 0.9375rem;
-    line-height: 1.7;
-    padding: 1.5rem;
+    min-height: calc(100vh - 280px);
+    font-size: 1rem;
+    line-height: 1.8;
+    padding: 2.5rem max(1.5rem, calc(50% - 430px)) 4rem;
   }
   #editor.locked .ql-editor {
-    background: rgba(25,26,35,0.015);
+    background: rgba(25,26,35,0.012);
     cursor: default;
   }
-  .ql-toolbar.ql-snow { border: none; border-bottom: 1px solid rgba(25,26,35,0.08); }
-  .ql-container.ql-snow { border: none; }
 
   #btn-concluir.done {
     background: #b9ff66; color: #191a23; border-color: #191a23;
