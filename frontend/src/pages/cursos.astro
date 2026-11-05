@@ -22,9 +22,25 @@ import MainLayout from '../layouts/MainLayout.astro';
   }
   .course-card:hover { transform: translateY(-2px); }
   .card-top {
-    height: 76px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.75rem; font-weight: 700;
+    height: 120px;
+    display: flex; align-items: flex-end;
+    font-size: 1.5rem; font-weight: 700;
+    color: rgba(255,255,255,0.9); letter-spacing: -0.02em;
+    position: relative; overflow: hidden;
+  }
+  .card-top-img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  }
+  .card-top-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.5) 100%);
+  }
+  .card-top-label {
+    position: relative; padding: 0.6rem 0.875rem; font-size: 1.125rem; font-weight: 700; line-height: 1.2;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  .card-top-initials {
+    position: relative; font-size: 1.75rem; font-weight: 700;
     color: rgba(255,255,255,0.9); letter-spacing: -0.02em;
   }
   .card-body { padding: 0.875rem 1rem 1rem; }
@@ -50,11 +66,22 @@ import MainLayout from '../layouts/MainLayout.astro';
     border: 1.5px solid #191a23; box-shadow: 0px 8px 0px #191a23;
   }
   .color-dot {
-    width: 30px; height: 30px; border-radius: 50%;
+    width: 24px; height: 24px; border-radius: 50%;
     border: 2.5px solid transparent; cursor: pointer;
-    transition: transform 0.15s, border-color 0.15s;
+    transition: transform 0.15s, border-color 0.15s; flex-shrink: 0;
   }
   .color-dot.sel { border-color: #191a23; transform: scale(1.18); }
+  .upload-zone {
+    border: 2px dashed rgba(25,26,35,0.15); border-radius: 14px;
+    padding: 1rem; text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .upload-zone:hover { border-color: rgba(25,26,35,0.35); background: rgba(25,26,35,0.02); }
+  .upload-zone.drag { border-color: #6366f1; background: rgba(99,102,241,0.04); }
+  .capa-preview {
+    height: 90px; border-radius: 10px; overflow: hidden; margin-bottom: 0.5rem; display: none;
+  }
+  .capa-preview img { width: 100%; height: 100%; object-fit: cover; }
 </style>
 
 <!-- Header -->
@@ -99,15 +126,27 @@ import MainLayout from '../layouts/MainLayout.astro';
         <textarea id="inp-desc" class="input resize-none" rows="2" placeholder="Breve descrição do conteúdo…"></textarea>
       </div>
       <div>
-        <label class="text-sm font-medium mb-2 block">Cor</label>
-        <div class="flex gap-2 flex-wrap" id="color-picker">
-          <button class="color-dot sel" data-c="#6366f1" style="background:#6366f1" title="Índigo"></button>
-          <button class="color-dot" data-c="#0ea5e9" style="background:#0ea5e9" title="Azul"></button>
-          <button class="color-dot" data-c="#10b981" style="background:#10b981" title="Verde"></button>
-          <button class="color-dot" data-c="#f59e0b" style="background:#f59e0b" title="Âmbar"></button>
-          <button class="color-dot" data-c="#ef4444" style="background:#ef4444" title="Vermelho"></button>
-          <button class="color-dot" data-c="#8b5cf6" style="background:#8b5cf6" title="Roxo"></button>
-          <button class="color-dot" data-c="#191a23" style="background:#191a23" title="Escuro"></button>
+        <label class="text-sm font-medium mb-2 block">Capa do curso</label>
+        <div class="capa-preview" id="capa-preview"><img id="capa-img" src="" alt="" /></div>
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="inp-capa" accept="image/*" class="hidden" />
+          <svg class="w-7 h-7 text-dark/20 mx-auto mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12h.008v.008H13.5V12zm-6 3h12a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15A2.25 2.25 0 002.25 6.75v8.25A2.25 2.25 0 004.5 15.75h3z"/>
+          </svg>
+          <p id="upload-label" class="text-sm text-dark/40">Clique ou arraste uma imagem</p>
+          <p class="text-xs text-dark/25 mt-0.5">JPG, PNG, WEBP · redimensionado automaticamente</p>
+        </div>
+        <div class="flex items-center gap-2 mt-2.5">
+          <span class="text-xs text-dark/40 shrink-0">Cor (sem imagem):</span>
+          <div class="flex gap-1.5 flex-wrap" id="color-picker">
+            <button class="color-dot sel" data-c="#6366f1" style="background:#6366f1" title="Índigo"></button>
+            <button class="color-dot" data-c="#0ea5e9" style="background:#0ea5e9" title="Azul"></button>
+            <button class="color-dot" data-c="#10b981" style="background:#10b981" title="Verde"></button>
+            <button class="color-dot" data-c="#f59e0b" style="background:#f59e0b" title="Âmbar"></button>
+            <button class="color-dot" data-c="#ef4444" style="background:#ef4444" title="Vermelho"></button>
+            <button class="color-dot" data-c="#8b5cf6" style="background:#8b5cf6" title="Roxo"></button>
+            <button class="color-dot" data-c="#191a23" style="background:#191a23" title="Escuro"></button>
+          </div>
         </div>
       </div>
     </div>
@@ -137,9 +176,18 @@ import MainLayout from '../layouts/MainLayout.astro';
 
     grid.innerHTML = cursos.map((c: any) => {
       const pct = c.total_aulas > 0 ? Math.round(c.aulas_concluidas / c.total_aulas * 100) : 0;
+      const cardTop = c.capa_base64
+        ? `<div class="card-top">
+            <img class="card-top-img" src="${c.capa_base64}" alt="" />
+            <div class="card-top-overlay"></div>
+            <span class="card-top-label">${c.titulo}</span>
+           </div>`
+        : `<div class="card-top" style="background:${c.cor || '#6366f1'};align-items:center;justify-content:center">
+            <span class="card-top-initials">${initials(c.titulo)}</span>
+           </div>`;
       return `
         <a href="/curso?id=${c.id}" class="course-card">
-          <div class="card-top" style="background:${c.cor || '#6366f1'}">${initials(c.titulo)}</div>
+          ${cardTop}
           <div class="card-body">
             <div class="card-title">${c.titulo}</div>
             <div class="card-desc">${c.descricao || '<em>Sem descrição</em>'}</div>
@@ -152,13 +200,20 @@ import MainLayout from '../layouts/MainLayout.astro';
 
   // ── Modal ──
   let cor = '#6366f1';
-  const overlay  = document.getElementById('overlay')!;
-  const btnNovo  = document.getElementById('btn-novo')!;
+  let capaBase64: string | null = null;
+
+  const overlay   = document.getElementById('overlay')!;
+  const btnNovo   = document.getElementById('btn-novo')!;
   const btnCancel = document.getElementById('btn-cancel')!;
-  const btnCriar = document.getElementById('btn-criar')!;
+  const btnCriar  = document.getElementById('btn-criar')!;
 
   btnNovo.addEventListener('click', () => overlay.classList.remove('hidden'));
-  btnCancel.addEventListener('click', () => overlay.classList.add('hidden'));
+  btnCancel.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    capaBase64 = null;
+    (document.getElementById('capa-preview') as HTMLElement).style.display = 'none';
+    (document.getElementById('upload-label') as HTMLElement).textContent = 'Clique ou arraste uma imagem';
+  });
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.add('hidden'); });
 
   document.getElementById('color-picker')!.addEventListener('click', e => {
@@ -167,6 +222,49 @@ import MainLayout from '../layouts/MainLayout.astro';
     document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('sel'));
     btn.classList.add('sel');
     cor = btn.dataset.c!;
+  });
+
+  // ── Image upload ──
+  function compressImage(file: File): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = url;
+    });
+  }
+
+  async function processImage(file: File) {
+    const b64 = await compressImage(file);
+    capaBase64 = b64;
+    (document.getElementById('capa-img') as HTMLImageElement).src = b64;
+    (document.getElementById('capa-preview') as HTMLElement).style.display = 'block';
+    (document.getElementById('upload-label') as HTMLElement).textContent = file.name;
+  }
+
+  const inpCapa    = document.getElementById('inp-capa') as HTMLInputElement;
+  const uploadZone = document.getElementById('upload-zone')!;
+
+  uploadZone.addEventListener('click', () => inpCapa.click());
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+  uploadZone.addEventListener('drop', async (e: DragEvent) => {
+    e.preventDefault(); uploadZone.classList.remove('drag');
+    const file = e.dataTransfer?.files[0];
+    if (file) await processImage(file);
+  });
+  inpCapa.addEventListener('change', async () => {
+    const file = inpCapa.files?.[0];
+    if (file) await processImage(file);
   });
 
   btnCriar.addEventListener('click', async () => {
@@ -180,7 +278,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     const res = await fetch('/api/cursos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ titulo, descricao, cor }),
+      body: JSON.stringify({ titulo, descricao, cor, capa_base64: capaBase64 }),
     });
 
     btnCriar.textContent = 'Criar';

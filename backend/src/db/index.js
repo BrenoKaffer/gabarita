@@ -162,6 +162,9 @@ db.exec(`
   );
 `);
 
+// Migrations
+try { db.prepare('ALTER TABLE cursos ADD COLUMN capa_base64 TEXT').run(); } catch {}
+
 // Seed concursos se vazio
 const { c: concursosCount } = db.prepare('SELECT COUNT(*) AS c FROM concursos').get();
 if (concursosCount === 0) {
