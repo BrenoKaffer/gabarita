@@ -3,7 +3,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 ---
 <MainLayout title="Curso">
 
-<style>
+<style is:global>
   .module-block {
     background: white;
     border: 1.5px solid rgba(25,26,35,0.1);
@@ -55,6 +55,23 @@ import MainLayout from '../layouts/MainLayout.astro';
     cursor: pointer; background: none; transition: all 0.15s; margin-top: 0.5rem;
   }
   .add-mod-btn:hover { border-color: rgba(25,26,35,0.4); color: #191a23; }
+
+  /* Modal (substitui prompt/confirm nativos) */
+  .dlg-overlay {
+    position: fixed; inset: 0; background: rgba(25,26,35,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; padding: 1rem;
+  }
+  .dlg-overlay.show { display: flex; }
+  .dlg-box {
+    background: white; border-radius: 20px; padding: 1.5rem;
+    width: 100%; max-width: 380px;
+    border: 1.5px solid #191a23; box-shadow: 0px 8px 0px #191a23;
+  }
+  .dlg-title { font-size: 1.0625rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .dlg-msg { font-size: 0.875rem; color: rgba(25,26,35,0.55); margin: 0.25rem 0 0; }
+  .dlg-box input.input { margin-top: 0.875rem; }
+  .dlg-actions { display: flex; gap: 0.5rem; margin-top: 1.25rem; }
 </style>
 
 <!-- Back -->
@@ -79,12 +96,82 @@ import MainLayout from '../layouts/MainLayout.astro';
   Adicionar Módulo
 </button>
 
+<!-- Modal (substitui prompt/confirm nativos) -->
+<div id="dlg-overlay" class="dlg-overlay">
+  <div class="dlg-box">
+    <h3 id="dlg-title" class="dlg-title"></h3>
+    <p id="dlg-msg" class="dlg-msg hidden"></p>
+    <input id="dlg-input" class="input hidden" type="text" />
+    <div class="dlg-actions">
+      <button id="dlg-cancel" class="btn-secondary flex-1 text-sm">Cancelar</button>
+      <button id="dlg-ok" class="btn-primary flex-1 text-sm">OK</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const token = localStorage.getItem('gab_token');
   const id = new URLSearchParams(location.search).get('id');
   if (!id) location.href = '/cursos';
 
   let curso: any = null;
+
+  // ── Modal custom (substitui prompt/confirm nativos) ──
+  const dlgOverlay = document.getElementById('dlg-overlay') as HTMLElement;
+  const dlgTitle   = document.getElementById('dlg-title') as HTMLElement;
+  const dlgMsg     = document.getElementById('dlg-msg') as HTMLElement;
+  const dlgInput   = document.getElementById('dlg-input') as HTMLInputElement;
+  const dlgCancel  = document.getElementById('dlg-cancel') as HTMLButtonElement;
+  const dlgOk      = document.getElementById('dlg-ok') as HTMLButtonElement;
+
+  function askText(title: string, placeholder = ''): Promise<string | null> {
+    return new Promise(resolve => {
+      dlgTitle.textContent = title;
+      dlgMsg.classList.add('hidden');
+      dlgInput.classList.remove('hidden');
+      dlgInput.value = '';
+      dlgInput.placeholder = placeholder;
+      dlgOk.textContent = 'OK';
+      dlgOverlay.classList.add('show');
+      setTimeout(() => dlgInput.focus(), 50);
+
+      const cleanup = () => {
+        dlgOverlay.classList.remove('show');
+        dlgCancel.removeEventListener('click', onCancel);
+        dlgOk.removeEventListener('click', onOk);
+        dlgInput.removeEventListener('keydown', onKey);
+      };
+      const onCancel = () => { cleanup(); resolve(null); };
+      const onOk = () => { const v = dlgInput.value.trim(); cleanup(); resolve(v || null); };
+      const onKey = (e: KeyboardEvent) => { if (e.key === 'Enter') onOk(); if (e.key === 'Escape') onCancel(); };
+
+      dlgCancel.addEventListener('click', onCancel);
+      dlgOk.addEventListener('click', onOk);
+      dlgInput.addEventListener('keydown', onKey);
+    });
+  }
+
+  function askConfirm(title: string, msg: string): Promise<boolean> {
+    return new Promise(resolve => {
+      dlgTitle.textContent = title;
+      dlgMsg.textContent = msg;
+      dlgMsg.classList.remove('hidden');
+      dlgInput.classList.add('hidden');
+      dlgOk.textContent = 'Remover';
+      dlgOverlay.classList.add('show');
+
+      const cleanup = () => {
+        dlgOverlay.classList.remove('show');
+        dlgCancel.removeEventListener('click', onCancel);
+        dlgOk.removeEventListener('click', onOk);
+      };
+      const onCancel = () => { cleanup(); resolve(false); };
+      const onOk = () => { cleanup(); resolve(true); };
+
+      dlgCancel.addEventListener('click', onCancel);
+      dlgOk.addEventListener('click', onOk);
+    });
+  }
 
   async function load() {
     const res = await fetch(`/api/cursos/${id}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -170,8 +257,8 @@ import MainLayout from '../layouts/MainLayout.astro';
   }
 
   async function addAula(mid: number) {
-    const titulo = prompt('Título da aula:');
-    if (!titulo?.trim()) return;
+    const titulo = await askText('Título da aula', 'Ex: Introdução ao tema');
+    if (!titulo) return;
     const res = await fetch(`/api/cursos/modulos/${mid}/aulas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -184,14 +271,15 @@ import MainLayout from '../layouts/MainLayout.astro';
   }
 
   async function delMod(mid: number) {
-    if (!confirm('Remover módulo e todas as aulas?')) return;
+    const ok = await askConfirm('Remover módulo?', 'O módulo e todas as suas aulas serão apagados permanentemente.');
+    if (!ok) return;
     await fetch(`/api/cursos/modulos/${mid}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     load();
   }
 
   document.getElementById('btn-add-mod')!.addEventListener('click', async () => {
-    const titulo = prompt('Título do módulo:');
-    if (!titulo?.trim()) return;
+    const titulo = await askText('Título do módulo', 'Ex: Módulo 1 — Introdução');
+    if (!titulo) return;
     await fetch(`/api/cursos/${id}/modulos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
