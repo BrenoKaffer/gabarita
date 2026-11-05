@@ -7,12 +7,13 @@ import MainLayout from '../layouts/MainLayout.astro';
   #read-view { max-width: 740px; }
 
   #edit-view {
-    display: grid;
+    display: none;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
     height: calc(100vh - 230px);
     min-height: 420px;
   }
+  #edit-view.show { display: grid; }
   @media (max-width: 768px) {
     #edit-view { grid-template-columns: 1fr; }
     #preview-pane { display: none !important; }
@@ -75,7 +76,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 </div>
 
 <!-- Edit mode (hidden) -->
-<div id="edit-view" class="hidden">
+<div id="edit-view">
   <div class="pane">
     <div class="pane-label">Markdown</div>
     <textarea id="md-ta" placeholder="# Título&#10;&#10;Escreva o conteúdo em Markdown…"></textarea>
@@ -146,7 +147,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 
   function enterEdit() {
     document.getElementById('read-view')!.classList.add('hidden');
-    document.getElementById('edit-view')!.classList.remove('hidden');
+    document.getElementById('edit-view')!.classList.add('show');
     document.getElementById('edit-actions')!.classList.remove('hidden');
     document.getElementById('btn-edit')!.classList.add('hidden');
     document.getElementById('btn-concluir')!.classList.add('hidden');
@@ -159,7 +160,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 
   function exitEdit() {
     document.getElementById('read-view')!.classList.remove('hidden');
-    document.getElementById('edit-view')!.classList.add('hidden');
+    document.getElementById('edit-view')!.classList.remove('show');
     document.getElementById('edit-actions')!.classList.add('hidden');
     document.getElementById('btn-edit')!.classList.remove('hidden');
     document.getElementById('btn-concluir')!.classList.remove('hidden');

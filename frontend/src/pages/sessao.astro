@@ -49,20 +49,22 @@ import MainLayout from '../layouts/MainLayout.astro';
 
   /* Reveal button */
   #btn-reveal {
-    display: block; width: 100%;
+    display: none; width: 100%;
     padding: 0.875rem; border-radius: 14px;
     background: #191a23; color: white;
     font-weight: 600; font-size: 0.9375rem;
     text-align: center; cursor: pointer; border: none;
     margin-bottom: 0.75rem; transition: opacity 0.1s;
   }
+  #btn-reveal.show { display: block; }
   #btn-reveal:hover { opacity: 0.85; }
 
   /* Rating buttons */
   #rating-row {
-    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    display: none; grid-template-columns: 1fr 1fr 1fr;
     gap: 0.75rem; margin-bottom: 1.5rem;
   }
+  #rating-row.show { display: grid; }
   .rate-btn {
     border: 1.5px solid rgba(25,26,35,0.15); border-radius: 14px;
     padding: 0.75rem 0.5rem; cursor: pointer;
@@ -117,9 +119,9 @@ import MainLayout from '../layouts/MainLayout.astro';
       </div>
     </div>
 
-    <button id="btn-reveal">Revelar →</button>
+    <button id="btn-reveal" class="show">Revelar →</button>
 
-    <div id="rating-row" class="hidden">
+    <div id="rating-row">
       <button class="rate-btn rate-1" data-r="1">
         <span class="rate-emoji">😵</span>
         <span class="rate-label">Não sabia</span>
@@ -197,8 +199,8 @@ import MainLayout from '../layouts/MainLayout.astro';
     (document.getElementById('deck-tag-back') as HTMLElement).textContent = c.deck_titulo;
 
     // Show reveal btn, hide rating
-    document.getElementById('btn-reveal')!.classList.remove('hidden');
-    document.getElementById('rating-row')!.classList.add('hidden');
+    document.getElementById('btn-reveal')!.classList.add('show');
+    document.getElementById('rating-row')!.classList.remove('show');
 
     // Progress
     const pct = Math.round(i / cards.length * 100);
@@ -214,8 +216,8 @@ import MainLayout from '../layouts/MainLayout.astro';
     if (revealed) return;
     revealed = true;
     document.getElementById('card-flip')!.classList.add('flipped');
-    document.getElementById('btn-reveal')!.classList.add('hidden');
-    document.getElementById('rating-row')!.classList.remove('hidden');
+    document.getElementById('btn-reveal')!.classList.remove('show');
+    document.getElementById('rating-row')!.classList.add('show');
   }
 
   // Rating

@@ -41,10 +41,14 @@ router.get('/answered', (req, res) => {
 
 // Questões erradas para revisão
 router.get('/errors', (req, res) => {
-  const rows = db.prepare(
-    'SELECT question_id FROM progress WHERE user_id = ? AND correct = 0'
-  ).all(req.user.id);
-  res.json(rows.map(r => r.question_id));
+  const rows = db.prepare(`
+    SELECT p.question_id, p.chosen, g.correct AS correct_answer
+    FROM progress p
+    LEFT JOIN gabarito g ON g.question_id = p.question_id
+    WHERE p.user_id = ? AND p.correct = 0
+    ORDER BY p.answered_at DESC
+  `).all(req.user.id);
+  res.json(rows);
 });
 
 // Favoritos

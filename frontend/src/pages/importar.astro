@@ -62,8 +62,9 @@ import MainLayout from '../layouts/MainLayout.astro';
   /* Progress overlay */
   #import-progress {
     position: fixed; inset: 0; background: rgba(25,26,35,0.5);
-    display: flex; align-items: center; justify-content: center; z-index: 50;
+    display: none; align-items: center; justify-content: center; z-index: 50;
   }
+  #import-progress.show { display: flex; }
   .progress-card {
     background: white; border-radius: 20px; padding: 2rem 2.5rem;
     text-align: center; min-width: 260px;
@@ -178,7 +179,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 </div>
 
 <!-- Progress overlay (hidden) -->
-<div id="import-progress" class="hidden">
+<div id="import-progress">
   <div class="progress-card">
     <div class="w-10 h-10 border-4 border-green border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
     <p class="font-semibold text-dark mb-1">Importando…</p>
@@ -349,7 +350,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     if (!validQuestoes.length) return;
 
     const overlay = document.getElementById('import-progress')!;
-    overlay.classList.remove('hidden');
+    overlay.classList.add('show');
     document.getElementById('prog-label')!.textContent = `Enviando ${validQuestoes.length} questões…`;
 
     const res = await fetch('/api/questoes/import', {
@@ -358,7 +359,7 @@ import MainLayout from '../layouts/MainLayout.astro';
       body: JSON.stringify({ questoes: validQuestoes }),
     });
 
-    overlay.classList.add('hidden');
+    overlay.classList.remove('show');
 
     if (res.ok) {
       const { imported } = await res.json();
