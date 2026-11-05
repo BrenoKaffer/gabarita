@@ -143,7 +143,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         ${due > 0 ? `<a href="/sessao?deck=${deck.id}" class="btn-primary text-sm py-2 px-4" style="background:#b9ff66;color:#191a23;border-color:#191a23">Estudar (${due})</a>` : '<span class="text-white/60 text-sm font-medium">✓ Em dia</span>'}
       </div>
       <div class="bg-white px-6 py-2.5 flex items-center gap-4 text-sm text-dark/45">
-        <span>${data.cards.length} cartão${data.cards.length !== 1 ? 'ões' : ''}</span>
+        <span>${data.cards.length} ${data.cards.length !== 1 ? 'cartões' : 'cartão'}</span>
         <span>·</span>
         <span>${due} para revisar hoje</span>
       </div>`;
@@ -225,7 +225,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         if (res.ok) {
           const { imported } = await res.json();
           const result = document.getElementById('import-result')!;
-          result.textContent = `✓ ${imported} cartão${imported !== 1 ? 'ões' : ''} importado${imported !== 1 ? 's' : ''}`;
+          result.textContent = `✓ ${imported} ${imported !== 1 ? 'cartões' : 'cartão'} importado${imported !== 1 ? 's' : ''}`;
           result.classList.remove('hidden');
           load();
         }

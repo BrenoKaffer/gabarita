@@ -339,7 +339,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     if (validCount > 0) {
       actRow.classList.remove('hidden');
       (document.getElementById('btn-confirm-label') as HTMLElement).textContent =
-        `Importar ${validCount} questão${validCount !== 1 ? 'ões' : ''}`;
+        `Importar ${validCount} ${validCount !== 1 ? 'questões' : 'questão'}`;
     } else {
       actRow.classList.add('hidden');
     }
@@ -351,7 +351,7 @@ import MainLayout from '../layouts/MainLayout.astro';
 
     const overlay = document.getElementById('import-progress')!;
     overlay.classList.add('show');
-    document.getElementById('prog-label')!.textContent = `Enviando ${validQuestoes.length} questões…`;
+    document.getElementById('prog-label')!.textContent = `Enviando ${validQuestoes.length} ${validQuestoes.length !== 1 ? 'questões' : 'questão'}…`;
 
     const res = await fetch('/api/questoes/import', {
       method: 'POST',
@@ -371,7 +371,7 @@ import MainLayout from '../layouts/MainLayout.astro';
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <h2 class="text-xl font-semibold mb-1">${imported} questão${imported !== 1 ? 'ões' : ''} importada${imported !== 1 ? 's' : ''}!</h2>
+          <h2 class="text-xl font-semibold mb-1">${imported} ${imported !== 1 ? 'questões importadas' : 'questão importada'}!</h2>
           <p class="text-dark/45 text-sm mb-6">Agora disponíveis na revisão e simulado.</p>
           <div class="flex gap-3">
             <a href="/study" class="btn-primary">Ir para Revisão</a>

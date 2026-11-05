@@ -125,7 +125,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     const btnLabel = document.getElementById('btn-estudar-label')!;
 
     if (totalDue > 0) {
-      dueLabel.textContent = `${totalDue} cartão${totalDue !== 1 ? 'ões' : ''} para revisar hoje`;
+      dueLabel.textContent = `${totalDue} ${totalDue !== 1 ? 'cartões' : 'cartão'} para revisar hoje`;
       btnEstudar.classList.remove('hidden');
       btnLabel.textContent = `Estudar hoje (${totalDue})`;
     } else {
@@ -147,7 +147,7 @@ import MainLayout from '../layouts/MainLayout.astro';
             <div class="deck-title">${d.titulo}</div>
             <div class="deck-desc">${d.descricao || '<em>Sem descrição</em>'}</div>
             <div class="deck-meta flex items-center justify-between">
-              <span>${d.total} cartão${d.total !== 1 ? 'ões' : ''}</span>
+              <span>${d.total} ${d.total !== 1 ? 'cartões' : 'cartão'}</span>
               ${d.due > 0 ? `<span class="due-badge">${d.due} p/ hoje</span>` : '<span class="text-green-600 font-medium text-xs">✓ Em dia</span>'}
             </div>
             <div class="strength-wrap">

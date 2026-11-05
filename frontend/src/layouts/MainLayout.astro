@@ -391,7 +391,7 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
       const notifs: Array<{type: string; text: string; href: string}> = [];
 
       if (errors?.length > 0)
-        notifs.push({ type: 'warn', text: `${errors.length} questão(ões) para revisar`, href: '/erros' });
+        notifs.push({ type: 'warn', text: `${errors.length} ${errors.length !== 1 ? 'questões' : 'questão'} para revisar`, href: '/erros' });
 
       const pct = overall?.respondidas
         ? Math.round((overall.acertos / overall.respondidas) * 100) : 0;
