@@ -1,0 +1,240 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+<MainLayout title="Deck">
+
+<style>
+  .card-row {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(25,26,35,0.06);
+  }
+  .card-row:last-child { border-bottom: none; }
+  .strength-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .card-frente { font-size: 0.875rem; color: #191a23; flex: 1; }
+  .card-verso  { font-size: 0.8rem; color: rgba(25,26,35,0.4); max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-next   { font-size: 0.7rem; color: rgba(25,26,35,0.3); flex-shrink: 0; }
+  .del-btn {
+    padding: 4px; border-radius: 6px; background: none; border: none; cursor: pointer;
+    color: rgba(25,26,35,0.2); transition: all 0.1s; flex-shrink: 0;
+  }
+  .del-btn:hover { background: rgba(239,68,68,0.08); color: #ef4444; }
+
+  /* Add card form */
+  .add-form {
+    display: flex; flex-direction: column; gap: 0.75rem;
+    padding: 1rem; background: rgba(25,26,35,0.025);
+    border-top: 1px solid rgba(25,26,35,0.07);
+  }
+  .pane-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  @media (max-width: 600px) { .pane-grid { grid-template-columns: 1fr; } }
+
+  /* Import drop zone */
+  .import-zone {
+    border: 1.5px dashed rgba(25,26,35,0.18); border-radius: 12px;
+    padding: 1rem; text-align: center; cursor: pointer;
+    transition: all 0.15s; background: none;
+  }
+  .import-zone:hover { border-color: #191a23; }
+  .import-zone input { display: none; }
+
+  /* Due badge */
+  .due-pill {
+    background: #191a23; color: #b9ff66;
+    padding: 2px 10px; border-radius: 999px;
+    font-size: 0.7rem; font-weight: 700;
+  }
+</style>
+
+<!-- Back -->
+<a href="/flashcards" class="inline-flex items-center gap-1.5 text-sm text-dark/45 hover:text-dark mb-5 transition-colors">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+  </svg>
+  Flashcards
+</a>
+
+<!-- Deck header -->
+<div id="deck-header" class="rounded-2xl overflow-hidden border-2 border-dark shadow-[0_4px_0_#191a23] mb-6"></div>
+
+<!-- Cards section -->
+<div class="card p-0 overflow-hidden mb-5">
+  <div class="flex items-center justify-between px-4 py-3 border-b border-dark/08">
+    <h3 class="font-semibold text-sm">Cartões</h3>
+    <div class="flex items-center gap-2">
+      <span id="card-count" class="text-xs text-dark/40"></span>
+    </div>
+  </div>
+
+  <div id="cards-list"></div>
+
+  <!-- Add card form -->
+  <div class="add-form" id="add-form">
+    <div class="pane-grid">
+      <div>
+        <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1">Frente</label>
+        <textarea id="inp-frente" class="input resize-none text-sm" rows="3" placeholder="Pergunta, conceito, fórmula…"></textarea>
+      </div>
+      <div>
+        <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1">Verso</label>
+        <textarea id="inp-verso" class="input resize-none text-sm" rows="3" placeholder="Resposta, definição, resultado…"></textarea>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button id="btn-add-card" class="btn-primary text-sm py-2 px-5">Adicionar cartão</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import from JSON -->
+<div class="card p-4 mb-5">
+  <h3 class="font-semibold text-sm mb-3">Importar deck de JSON</h3>
+  <div id="import-zone" class="import-zone">
+    <input type="file" id="import-input" accept=".json" />
+    <p class="text-sm text-dark/50">Arraste ou <button id="import-btn" class="underline">selecione</button> um arquivo</p>
+    <p class="text-xs text-dark/30 mt-1">Formato: <code class="bg-dark/06 px-1 rounded">&#123;"cards":[&#123;"frente":"...","verso":"..."&#125;]&#125;</code></p>
+  </div>
+  <div id="import-result" class="hidden mt-3 text-sm text-green-700 font-medium"></div>
+</div>
+
+<script>
+  const token = localStorage.getItem('gab_token');
+  const deckId = new URLSearchParams(location.search).get('id');
+  if (!deckId) location.href = '/flashcards';
+
+  let deck: any = null;
+
+  function strengthColor(s: number) {
+    if (!s || s === 0) return '#d1d5db';
+    if (s >= 75) return '#10b981';
+    if (s >= 50) return '#f59e0b';
+    return '#ef4444';
+  }
+
+  function relDate(dateStr: string | null) {
+    if (!dateStr) return 'Novo';
+    const today = new Date().toISOString().slice(0, 10);
+    if (dateStr <= today) return 'Hoje';
+    const d = new Date(dateStr + 'T12:00:00');
+    const t = new Date(); t.setHours(12, 0, 0, 0);
+    const diff = Math.round((d.getTime() - t.getTime()) / 86400000);
+    return `em ${diff}d`;
+  }
+
+  async function load() {
+    const res = await fetch(`/api/flashcards/decks/${deckId}/cards`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) { location.href = '/flashcards'; return; }
+    const data = await res.json();
+    deck = data.deck;
+    document.title = `${deck.titulo} · Gabarita`;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const due = data.cards.filter((c: any) => c.due).length;
+
+    // Header
+    document.getElementById('deck-header')!.innerHTML = `
+      <div style="background:${deck.cor}" class="px-6 py-5 flex items-center justify-between">
+        <div>
+          <h1 class="text-white text-xl font-semibold">${deck.titulo}</h1>
+          ${deck.descricao ? `<p class="text-white/65 text-sm mt-1">${deck.descricao}</p>` : ''}
+        </div>
+        ${due > 0 ? `<a href="/sessao?deck=${deck.id}" class="btn-primary text-sm py-2 px-4" style="background:#b9ff66;color:#191a23;border-color:#191a23">Estudar (${due})</a>` : '<span class="text-white/60 text-sm font-medium">✓ Em dia</span>'}
+      </div>
+      <div class="bg-white px-6 py-2.5 flex items-center gap-4 text-sm text-dark/45">
+        <span>${data.cards.length} cartão${data.cards.length !== 1 ? 'ões' : ''}</span>
+        <span>·</span>
+        <span>${due} para revisar hoje</span>
+      </div>`;
+
+    // Cards list
+    document.getElementById('card-count')!.textContent = `${data.cards.length} total`;
+    document.getElementById('cards-list')!.innerHTML = data.cards.length === 0
+      ? '<p class="p-4 text-sm text-dark/35 text-center">Nenhum cartão ainda. Adicione abaixo.</p>'
+      : data.cards.map((c: any) => `
+          <div class="card-row" id="cr-${c.id}">
+            <span class="strength-dot" style="background:${strengthColor(c.strength)}"></span>
+            <span class="card-frente">${c.frente.length > 70 ? c.frente.slice(0, 70) + '…' : c.frente}</span>
+            <span class="card-verso">${c.verso.length > 50 ? c.verso.slice(0, 50) + '…' : c.verso}</span>
+            <span class="card-next">${relDate(c.proxima_rev)}</span>
+            <button class="del-btn" onclick="delCard(${c.id})" title="Remover">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>`).join('');
+  }
+
+  // ── Add card ──
+  document.getElementById('btn-add-card')!.addEventListener('click', async () => {
+    const frente = (document.getElementById('inp-frente') as HTMLTextAreaElement).value.trim();
+    const verso  = (document.getElementById('inp-verso') as HTMLTextAreaElement).value.trim();
+    if (!frente || !verso) return;
+
+    const btn = document.getElementById('btn-add-card') as HTMLButtonElement;
+    btn.textContent = 'Adicionando…'; btn.disabled = true;
+
+    const res = await fetch(`/api/flashcards/decks/${deckId}/cards`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ frente, verso }),
+    });
+
+    btn.textContent = 'Adicionar cartão'; btn.disabled = false;
+
+    if (res.ok) {
+      (document.getElementById('inp-frente') as HTMLTextAreaElement).value = '';
+      (document.getElementById('inp-verso') as HTMLTextAreaElement).value = '';
+      load();
+    }
+  });
+
+  // ── Delete card ──
+  async function delCard(id: number) {
+    if (!confirm('Remover cartão?')) return;
+    await fetch(`/api/flashcards/cards/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    document.getElementById(`cr-${id}`)?.remove();
+  }
+
+  // ── Import from JSON ──
+  const importZone  = document.getElementById('import-zone')!;
+  const importInput = document.getElementById('import-input') as HTMLInputElement;
+
+  document.getElementById('import-btn')!.addEventListener('click', e => { e.stopPropagation(); importInput.click(); });
+  importZone.addEventListener('click', () => importInput.click());
+  importZone.addEventListener('dragover', e => { e.preventDefault(); importZone.style.borderColor = '#191a23'; });
+  importZone.addEventListener('dragleave', () => importZone.style.borderColor = '');
+  importZone.addEventListener('drop', e => {
+    e.preventDefault(); importZone.style.borderColor = '';
+    if (e.dataTransfer?.files[0]) handleImportFile(e.dataTransfer.files[0]);
+  });
+  importInput.addEventListener('change', () => { if (importInput.files?.[0]) handleImportFile(importInput.files[0]); });
+
+  function handleImportFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      try {
+        const json = JSON.parse(e.target?.result as string);
+        const cards = Array.isArray(json) ? json : json.cards ?? [];
+        const res = await fetch(`/api/flashcards/decks/${deckId}/import`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ cards }),
+        });
+        if (res.ok) {
+          const { imported } = await res.json();
+          const result = document.getElementById('import-result')!;
+          result.textContent = `✓ ${imported} cartão${imported !== 1 ? 'ões' : ''} importado${imported !== 1 ? 's' : ''}`;
+          result.classList.remove('hidden');
+          load();
+        }
+      } catch { alert('JSON inválido'); }
+    };
+    reader.readAsText(file);
+  }
+
+  (window as any).delCard = delCard;
+  load();
+</script>
+</MainLayout>

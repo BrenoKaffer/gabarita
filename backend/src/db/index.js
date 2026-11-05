@@ -92,6 +92,37 @@ db.exec(`
     PRIMARY KEY (user_id, aula_id)
   );
 
+  CREATE TABLE IF NOT EXISTS decks (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    titulo     TEXT NOT NULL,
+    descricao  TEXT,
+    cor        TEXT DEFAULT '#6366f1',
+    auto_deck  INTEGER DEFAULT 0,
+    criado_em  TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS flashcards (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    deck_id    INTEGER NOT NULL REFERENCES decks(id) ON DELETE CASCADE,
+    frente     TEXT NOT NULL,
+    verso      TEXT NOT NULL,
+    source     TEXT DEFAULT 'manual',
+    source_id  TEXT,
+    criado_em  TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS srs_state (
+    user_id     INTEGER NOT NULL REFERENCES users(id),
+    card_id     INTEGER NOT NULL REFERENCES flashcards(id) ON DELETE CASCADE,
+    intervalo   INTEGER DEFAULT 1,
+    easiness    REAL    DEFAULT 2.5,
+    repeticoes  INTEGER DEFAULT 0,
+    proxima_rev TEXT    DEFAULT (date('now')),
+    ultima_rev  TEXT,
+    PRIMARY KEY (user_id, card_id)
+  );
+
   CREATE TABLE IF NOT EXISTS questoes (
     id           TEXT PRIMARY KEY,
     banca        TEXT,

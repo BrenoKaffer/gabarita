@@ -1,0 +1,267 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+<MainLayout title="Sessão de Estudo">
+
+<style>
+  #session-wrap { max-width: 600px; margin: 0 auto; }
+
+  /* Progress bar */
+  .sess-bar { height: 6px; background: rgba(25,26,35,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 1.5rem; }
+  .sess-fill { height: 100%; background: #b9ff66; border-radius: 3px; transition: width 0.4s; }
+
+  /* Card flip */
+  .card-flip-wrap {
+    perspective: 900px;
+    height: 260px;
+    margin-bottom: 1.5rem;
+    cursor: pointer;
+  }
+  .card-flip {
+    position: relative; width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.5s ease;
+  }
+  .card-flip.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute; inset: 0;
+    border-radius: 20px; border: 1.5px solid #191a23;
+    box-shadow: 0px 6px 0px #191a23;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2rem 1.5rem; text-align: center;
+    backface-visibility: hidden;
+  }
+  .card-front { background: white; }
+  .card-back  { background: #191a23; color: white; transform: rotateY(180deg); }
+  .card-label {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+    font-weight: 700; margin-bottom: 1rem; opacity: 0.3;
+  }
+  .card-text { font-size: 1.0625rem; line-height: 1.6; }
+  .card-back .card-label { opacity: 0.4; color: #b9ff66; }
+  .card-deck-tag {
+    position: absolute; top: 12px; right: 14px;
+    font-size: 0.65rem; background: rgba(25,26,35,0.07);
+    padding: 2px 8px; border-radius: 999px; color: rgba(25,26,35,0.4);
+  }
+  .card-back .card-deck-tag { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+
+  /* Reveal button */
+  #btn-reveal {
+    display: block; width: 100%;
+    padding: 0.875rem; border-radius: 14px;
+    background: #191a23; color: white;
+    font-weight: 600; font-size: 0.9375rem;
+    text-align: center; cursor: pointer; border: none;
+    margin-bottom: 0.75rem; transition: opacity 0.1s;
+  }
+  #btn-reveal:hover { opacity: 0.85; }
+
+  /* Rating buttons */
+  #rating-row {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem; margin-bottom: 1.5rem;
+  }
+  .rate-btn {
+    border: 1.5px solid rgba(25,26,35,0.15); border-radius: 14px;
+    padding: 0.75rem 0.5rem; cursor: pointer;
+    text-align: center; background: white;
+    transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .rate-btn:hover { border-color: #191a23; transform: translateY(-1px); }
+  .rate-btn .rate-emoji { font-size: 1.5rem; }
+  .rate-btn .rate-label { font-size: 0.75rem; font-weight: 600; color: rgba(25,26,35,0.7); }
+  .rate-btn .rate-sub   { font-size: 0.65rem; color: rgba(25,26,35,0.35); }
+  .rate-btn.rate-1:hover { border-color: #ef4444; background: rgba(239,68,68,0.04); }
+  .rate-btn.rate-3:hover { border-color: #f59e0b; background: rgba(245,158,11,0.04); }
+  .rate-btn.rate-5:hover { border-color: #10b981; background: rgba(16,185,129,0.04); }
+
+  /* Stats bottom */
+  #sess-stats { display: flex; gap: 1.5rem; justify-content: center; font-size: 0.8rem; color: rgba(25,26,35,0.4); }
+  #sess-stats span strong { color: #191a23; }
+
+  /* Done screen */
+  #done-screen { text-align: center; padding: 2rem 0; }
+</style>
+
+<div id="session-wrap">
+  <!-- Top: counter + progress -->
+  <div class="flex items-center justify-between mb-3">
+    <a href="/flashcards" class="text-sm text-dark/40 hover:text-dark transition-colors flex items-center gap-1">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Sair
+    </a>
+    <span id="sess-counter" class="text-sm font-medium text-dark/50">— / —</span>
+    <span id="sess-score" class="text-xs text-dark/35"></span>
+  </div>
+
+  <div class="sess-bar"><div id="sess-fill" class="sess-fill" style="width:0%"></div></div>
+
+  <!-- Active card -->
+  <div id="active-screen">
+    <div class="card-flip-wrap" id="flip-wrap">
+      <div class="card-flip" id="card-flip">
+        <div class="card-face card-front">
+          <div class="card-deck-tag" id="deck-tag"></div>
+          <div class="card-label">Frente</div>
+          <div class="card-text" id="card-front-text"></div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-deck-tag" id="deck-tag-back"></div>
+          <div class="card-label">Verso</div>
+          <div class="card-text" id="card-back-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <button id="btn-reveal">Revelar →</button>
+
+    <div id="rating-row" class="hidden">
+      <button class="rate-btn rate-1" data-r="1">
+        <span class="rate-emoji">😵</span>
+        <span class="rate-label">Não sabia</span>
+        <span class="rate-sub">Revisar logo</span>
+      </button>
+      <button class="rate-btn rate-3" data-r="3">
+        <span class="rate-emoji">🤔</span>
+        <span class="rate-label">Hesitei</span>
+        <span class="rate-sub">+alguns dias</span>
+      </button>
+      <button class="rate-btn rate-5" data-r="5">
+        <span class="rate-emoji">🧠</span>
+        <span class="rate-label">Sabia!</span>
+        <span class="rate-sub">Intervalo longo</span>
+      </button>
+    </div>
+
+    <div id="sess-stats">
+      <span>✓ <strong id="stat-ok">0</strong> sabia</span>
+      <span>~ <strong id="stat-hes">0</strong> hesitei</span>
+      <span>✗ <strong id="stat-no">0</strong> não sabia</span>
+    </div>
+  </div>
+
+  <!-- Done screen -->
+  <div id="done-screen" class="hidden">
+    <div class="w-16 h-16 bg-green rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-dark shadow-[0_4px_0_#191a23] text-2xl">🎉</div>
+    <h2 class="text-xl font-semibold mb-2">Sessão concluída!</h2>
+    <p id="done-summary" class="text-dark/45 text-sm mb-6"></p>
+    <div class="flex gap-3 justify-center">
+      <a href="/flashcards" class="btn-secondary">Ver Decks</a>
+      <button id="btn-reiniciar" class="btn-primary">Reiniciar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('gab_token');
+  if (!token) location.href = '/login';
+
+  const deckFilter = new URLSearchParams(location.search).get('deck');
+  let cards: any[] = [];
+  let idx = 0;
+  let revealed = false;
+  let stats = { ok: 0, hes: 0, no: 0 };
+
+  async function load() {
+    const url = '/api/flashcards/sessao' + (deckFilter ? `?deck=${deckFilter}` : '');
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    cards = await res.json();
+
+    if (cards.length === 0) {
+      showDone();
+      return;
+    }
+
+    showCard(0);
+  }
+
+  function showCard(i: number) {
+    if (i >= cards.length) { showDone(); return; }
+    const c = cards[i];
+    idx = i;
+    revealed = false;
+
+    // Reset flip
+    const flip = document.getElementById('card-flip')!;
+    flip.classList.remove('flipped');
+
+    // Fill content
+    (document.getElementById('card-front-text') as HTMLElement).textContent = c.frente;
+    (document.getElementById('card-back-text') as HTMLElement).textContent = c.verso;
+    (document.getElementById('deck-tag') as HTMLElement).textContent = c.deck_titulo;
+    (document.getElementById('deck-tag-back') as HTMLElement).textContent = c.deck_titulo;
+
+    // Show reveal btn, hide rating
+    document.getElementById('btn-reveal')!.classList.remove('hidden');
+    document.getElementById('rating-row')!.classList.add('hidden');
+
+    // Progress
+    const pct = Math.round(i / cards.length * 100);
+    (document.getElementById('sess-fill') as HTMLElement).style.width = pct + '%';
+    (document.getElementById('sess-counter') as HTMLElement).textContent = `${i + 1} / ${cards.length}`;
+  }
+
+  // Reveal on card click or button
+  document.getElementById('flip-wrap')!.addEventListener('click', reveal);
+  document.getElementById('btn-reveal')!.addEventListener('click', reveal);
+
+  function reveal() {
+    if (revealed) return;
+    revealed = true;
+    document.getElementById('card-flip')!.classList.add('flipped');
+    document.getElementById('btn-reveal')!.classList.add('hidden');
+    document.getElementById('rating-row')!.classList.remove('hidden');
+  }
+
+  // Rating
+  document.getElementById('rating-row')!.addEventListener('click', async e => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('.rate-btn');
+    if (!btn || !revealed) return;
+
+    const rating = parseInt(btn.dataset.r!);
+    const card   = cards[idx];
+
+    // Update stats display
+    if (rating === 5) { stats.ok++;  (document.getElementById('stat-ok') as HTMLElement).textContent = String(stats.ok); }
+    if (rating === 3) { stats.hes++; (document.getElementById('stat-hes') as HTMLElement).textContent = String(stats.hes); }
+    if (rating === 1) { stats.no++;  (document.getElementById('stat-no') as HTMLElement).textContent = String(stats.no); }
+
+    // Send to backend (non-blocking, next card loads immediately)
+    fetch(`/api/flashcards/cards/${card.id}/avaliar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ rating }),
+    });
+
+    showCard(idx + 1);
+  });
+
+  function showDone() {
+    document.getElementById('active-screen')!.classList.add('hidden');
+    document.getElementById('done-screen')!.classList.remove('hidden');
+    (document.getElementById('sess-fill') as HTMLElement).style.width = '100%';
+
+    const total = stats.ok + stats.hes + stats.no;
+    const pct   = total > 0 ? Math.round(stats.ok / total * 100) : 0;
+    (document.getElementById('done-summary') as HTMLElement).textContent =
+      total > 0
+        ? `${total} cartões · ${pct}% sabia de cara · próximas revisões agendadas pelo SM-2`
+        : 'Nenhum cartão para revisar hoje. Volte amanhã!';
+  }
+
+  document.getElementById('btn-reiniciar')!.addEventListener('click', () => {
+    stats = { ok: 0, hes: 0, no: 0 };
+    ['stat-ok','stat-hes','stat-no'].forEach(id => (document.getElementById(id) as HTMLElement).textContent = '0');
+    document.getElementById('active-screen')!.classList.remove('hidden');
+    document.getElementById('done-screen')!.classList.add('hidden');
+    load();
+  });
+
+  load();
+</script>
+</MainLayout>

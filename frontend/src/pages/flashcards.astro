@@ -1,0 +1,200 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+<MainLayout title="Flashcards">
+
+<style>
+  .decks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+  .deck-card {
+    background: white;
+    border: 1.5px solid #191a23;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0px 4px 0px #191a23;
+    text-decoration: none;
+    display: block;
+    transition: transform 0.15s;
+  }
+  .deck-card:hover { transform: translateY(-2px); }
+  .deck-top {
+    height: 72px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+  }
+  .deck-body { padding: 0.875rem 1rem 1rem; }
+  .deck-title { font-size: 0.9375rem; font-weight: 600; color: #191a23; margin-bottom: 0.2rem; }
+  .deck-desc  { font-size: 0.8125rem; color: rgba(25,26,35,0.45); line-height: 1.5; min-height: 2em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.6rem; }
+  .deck-meta  { font-size: 0.72rem; color: rgba(25,26,35,0.35); margin-bottom: 0.5rem; }
+  .strength-wrap { height: 4px; background: rgba(25,26,35,0.07); border-radius: 2px; overflow: hidden; margin-bottom: 0.5rem; }
+  .strength-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+  .due-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #191a23; color: #b9ff66; padding: 2px 8px;
+    border-radius: 999px; font-size: 0.7rem; font-weight: 700;
+  }
+
+  /* Modal */
+  .overlay { position: fixed; inset: 0; background: rgba(25,26,35,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+  .modal { background: white; border-radius: 20px; padding: 1.75rem; width: 100%; max-width: 440px; border: 1.5px solid #191a23; box-shadow: 0px 8px 0px #191a23; }
+  .color-dot { width: 30px; height: 30px; border-radius: 50%; border: 2.5px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
+  .color-dot.sel { border-color: #191a23; transform: scale(1.18); }
+</style>
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-semibold">Flashcards</h1>
+    <p id="due-label" class="text-dark/45 text-sm mt-0.5">Carregando…</p>
+  </div>
+  <div class="flex gap-2">
+    <a id="btn-estudar" href="/sessao" class="btn-primary flex items-center gap-2 text-sm hidden">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v9.75m0 0L8.25 9.5M12 12.75l3.75-3.25M5.25 20.25h13.5"/>
+      </svg>
+      <span id="btn-estudar-label">Estudar hoje</span>
+    </a>
+    <button id="btn-novo" class="btn-secondary flex items-center gap-2 text-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Novo Deck
+    </button>
+  </div>
+</div>
+
+<!-- Empty state -->
+<div id="empty-state" class="hidden flex-col items-center py-20 text-center">
+  <div class="w-16 h-16 bg-dark/5 rounded-2xl flex items-center justify-center mb-4 text-3xl">🃏</div>
+  <p class="text-dark/55 font-medium mb-1">Nenhum deck ainda</p>
+  <p class="text-dark/35 text-sm">Crie seu primeiro deck ou responda questões — cartões são criados automaticamente ao errar.</p>
+</div>
+
+<!-- Grid -->
+<div id="grid" class="decks-grid"></div>
+
+<!-- Modal -->
+<div id="overlay" class="overlay hidden">
+  <div class="modal">
+    <h2 class="text-lg font-semibold mb-4">Novo Deck</h2>
+    <div class="flex flex-col gap-4">
+      <div>
+        <label class="text-sm font-medium mb-1.5 block">Título <span class="text-red-400">*</span></label>
+        <input id="inp-titulo" type="text" class="input" placeholder="Ex: Direito Constitucional" />
+      </div>
+      <div>
+        <label class="text-sm font-medium mb-1.5 block">Descrição <span class="text-dark/30 font-normal">(opcional)</span></label>
+        <textarea id="inp-desc" class="input resize-none" rows="2" placeholder="Breve descrição…"></textarea>
+      </div>
+      <div>
+        <label class="text-sm font-medium mb-2 block">Cor</label>
+        <div class="flex gap-2 flex-wrap" id="color-picker">
+          <button class="color-dot sel" data-c="#6366f1" style="background:#6366f1"></button>
+          <button class="color-dot" data-c="#0ea5e9" style="background:#0ea5e9"></button>
+          <button class="color-dot" data-c="#10b981" style="background:#10b981"></button>
+          <button class="color-dot" data-c="#f59e0b" style="background:#f59e0b"></button>
+          <button class="color-dot" data-c="#ef4444" style="background:#ef4444"></button>
+          <button class="color-dot" data-c="#8b5cf6" style="background:#8b5cf6"></button>
+          <button class="color-dot" data-c="#191a23" style="background:#191a23"></button>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2 mt-6">
+      <button id="btn-cancel" class="btn-secondary flex-1 text-sm">Cancelar</button>
+      <button id="btn-criar" class="btn-primary flex-1 text-sm">Criar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('gab_token');
+  if (!token) location.href = '/login';
+
+  async function load() {
+    const res = await fetch('/api/flashcards/decks', { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const decks = await res.json();
+
+    const totalDue = decks.reduce((s: number, d: any) => s + d.due, 0);
+    const dueLabel = document.getElementById('due-label')!;
+    const btnEstudar = document.getElementById('btn-estudar') as HTMLAnchorElement;
+    const btnLabel = document.getElementById('btn-estudar-label')!;
+
+    if (totalDue > 0) {
+      dueLabel.textContent = `${totalDue} cartão${totalDue !== 1 ? 'ões' : ''} para revisar hoje`;
+      btnEstudar.classList.remove('hidden');
+      btnLabel.textContent = `Estudar hoje (${totalDue})`;
+    } else {
+      dueLabel.textContent = decks.length ? 'Tudo em dia! 🎉' : 'Sem decks criados';
+    }
+
+    const grid  = document.getElementById('grid')!;
+    const empty = document.getElementById('empty-state')!;
+    if (!decks.length) { empty.style.display = 'flex'; return; }
+
+    grid.innerHTML = decks.map((d: any) => {
+      const strengthColor = d.avg_strength >= 75 ? '#10b981' : d.avg_strength >= 50 ? '#f59e0b' : '#ef4444';
+      return `
+        <a href="/deck?id=${d.id}" class="deck-card">
+          <div class="deck-top" style="background:${d.cor}">
+            ${d.auto_deck ? '⚡' : '🃏'}
+          </div>
+          <div class="deck-body">
+            <div class="deck-title">${d.titulo}</div>
+            <div class="deck-desc">${d.descricao || '<em>Sem descrição</em>'}</div>
+            <div class="deck-meta flex items-center justify-between">
+              <span>${d.total} cartão${d.total !== 1 ? 'ões' : ''}</span>
+              ${d.due > 0 ? `<span class="due-badge">${d.due} p/ hoje</span>` : '<span class="text-green-600 font-medium text-xs">✓ Em dia</span>'}
+            </div>
+            <div class="strength-wrap">
+              <div class="strength-fill" style="width:${d.avg_strength}%;background:${strengthColor}"></div>
+            </div>
+            <div class="text-[10px] text-dark/30">Memória: ${d.avg_strength}%</div>
+          </div>
+        </a>`;
+    }).join('');
+  }
+
+  // ── Modal ──
+  let cor = '#6366f1';
+  const overlay   = document.getElementById('overlay')!;
+  const btnNovo   = document.getElementById('btn-novo')!;
+  const btnCancel = document.getElementById('btn-cancel')!;
+  const btnCriar  = document.getElementById('btn-criar') as HTMLButtonElement;
+
+  btnNovo.addEventListener('click', () => overlay.classList.remove('hidden'));
+  btnCancel.addEventListener('click', () => overlay.classList.add('hidden'));
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.add('hidden'); });
+
+  document.getElementById('color-picker')!.addEventListener('click', e => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('.color-dot');
+    if (!btn) return;
+    document.querySelectorAll('.color-dot').forEach(el => el.classList.remove('sel'));
+    btn.classList.add('sel');
+    cor = btn.dataset.c!;
+  });
+
+  btnCriar.addEventListener('click', async () => {
+    const titulo   = (document.getElementById('inp-titulo') as HTMLInputElement).value.trim();
+    const descricao = (document.getElementById('inp-desc') as HTMLTextAreaElement).value.trim();
+    if (!titulo) { (document.getElementById('inp-titulo') as HTMLInputElement).focus(); return; }
+
+    btnCriar.textContent = 'Criando…'; btnCriar.disabled = true;
+    const res = await fetch('/api/flashcards/decks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ titulo, descricao, cor }),
+    });
+    btnCriar.textContent = 'Criar'; btnCriar.disabled = false;
+    if (res.ok) {
+      const { id } = await res.json();
+      location.href = `/deck?id=${id}`;
+    }
+  });
+
+  load();
+</script>
+</MainLayout>

@@ -314,6 +314,18 @@ function renderQuestion() {
       has_gabarito: data.has_gabarito,
     };
     renderQuestion();
+
+    // Auto-create flashcard when wrong
+    if (data.correct === 0 && data.correct_answer) {
+      const correctAlt = q.a.find((a: any) => a.l === data.correct_answer);
+      const frente = q.e.length > 300 ? q.e.slice(0, 300) + '…' : q.e;
+      const verso  = `Resposta: ${data.correct_answer}${correctAlt ? ' — ' + correctAlt.t : ''}`;
+      fetch('/api/flashcards/auto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ frente, verso, source_id: q.id }),
+      });
+    }
   });
 
   // Favorite
