@@ -114,14 +114,14 @@ router.post('/json', async (req, res) => {
 // ── POST /api/importar-curso/criar ──
 // Cria o curso completo a partir da estrutura confirmada
 router.post('/criar', (req, res) => {
-  const { titulo, descricao, cor, modulos, provas } = req.body;
+  const { titulo, descricao, cor, modulos, provas, concurso_id } = req.body;
   if (!titulo?.trim()) return res.status(400).json({ error: 'titulo obrigatório' });
   if (!Array.isArray(modulos)) return res.status(400).json({ error: 'modulos inválidos' });
 
   const criarCurso = db.transaction(() => {
     const { lastInsertRowid: cursoId } = db.prepare(
-      'INSERT INTO cursos (titulo, descricao, cor, user_id) VALUES (?, ?, ?, ?)'
-    ).run(titulo.trim(), descricao || null, cor || '#6366f1', req.user.id);
+      'INSERT INTO cursos (titulo, descricao, cor, concurso_id, user_id) VALUES (?, ?, ?, ?, ?)'
+    ).run(titulo.trim(), descricao || null, cor || '#6366f1', concurso_id || null, req.user.id);
 
     for (let mi = 0; mi < modulos.length; mi++) {
       const m = modulos[mi];

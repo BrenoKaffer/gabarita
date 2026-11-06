@@ -100,28 +100,4 @@ router.delete('/favorites/:qid', (req, res) => {
   res.json({ ok: true });
 });
 
-// Salvar simulado finalizado
-router.post('/simulado', (req, res) => {
-  const { disc, total, acertos, duration_s, answers } = req.body;
-  const { lastInsertRowid } = db.prepare(
-    'INSERT INTO simulados (user_id, disc, total, acertos, duration_s) VALUES (?, ?, ?, ?, ?)'
-  ).run(req.user.id, disc || null, total, acertos, duration_s || null);
-
-  // gravar respostas individuais
-  if (Array.isArray(answers)) {
-    const stmt = db.prepare(`
-      INSERT INTO progress (user_id, question_id, chosen, correct)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(user_id, question_id) DO UPDATE SET chosen=excluded.chosen, correct=excluded.correct, answered_at=datetime('now')
-    `);
-    for (const a of answers) {
-      const gab = db.prepare('SELECT correct FROM gabarito WHERE question_id = ?').get(a.question_id);
-      const correct = gab ? (gab.correct === a.chosen ? 1 : 0) : null;
-      if (correct !== null) stmt.run(req.user.id, a.question_id, a.chosen, correct);
-    }
-  }
-
-  res.json({ id: lastInsertRowid });
-});
-
 export default router;

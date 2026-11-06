@@ -74,7 +74,7 @@ router.post('/aulas/:aid/concluir', (req, res) => {
 
 router.get('/', (req, res) => {
   const rows = db.prepare(`
-    SELECT c.id, c.titulo, c.descricao, c.cor, c.capa_base64, c.criado_em,
+    SELECT c.id, c.titulo, c.descricao, c.cor, c.capa_base64, c.criado_em, c.concurso_id,
       COUNT(DISTINCT m.id) AS total_modulos,
       COUNT(DISTINCT a.id) AS total_aulas,
       COALESCE(SUM(CASE WHEN ap.concluida=1 THEN 1 ELSE 0 END), 0) AS aulas_concluidas
@@ -90,11 +90,11 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { titulo, descricao, cor, capa_base64 } = req.body;
+  const { titulo, descricao, cor, capa_base64, concurso_id } = req.body;
   if (!titulo?.trim()) return res.status(400).json({ error: 'titulo obrigatório' });
   const { lastInsertRowid } = db.prepare(
-    'INSERT INTO cursos (titulo, descricao, cor, capa_base64, user_id) VALUES (?, ?, ?, ?, ?)'
-  ).run(titulo.trim(), descricao || null, cor || '#6366f1', capa_base64 || null, req.user.id);
+    'INSERT INTO cursos (titulo, descricao, cor, capa_base64, concurso_id, user_id) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(titulo.trim(), descricao || null, cor || '#6366f1', capa_base64 || null, concurso_id || null, req.user.id);
   res.json({ id: lastInsertRowid });
 });
 
@@ -118,9 +118,9 @@ router.get('/:id', (req, res) => {
 });
 
 router.put('/:id', (req, res) => {
-  const { titulo, descricao, cor, capa_base64 } = req.body;
-  db.prepare('UPDATE cursos SET titulo=?, descricao=?, cor=?, capa_base64=? WHERE id=? AND user_id=?')
-    .run(titulo, descricao || null, cor || '#6366f1', capa_base64 !== undefined ? capa_base64 : null, req.params.id, req.user.id);
+  const { titulo, descricao, cor, capa_base64, concurso_id } = req.body;
+  db.prepare('UPDATE cursos SET titulo=?, descricao=?, cor=?, capa_base64=?, concurso_id=? WHERE id=? AND user_id=?')
+    .run(titulo, descricao || null, cor || '#6366f1', capa_base64 !== undefined ? capa_base64 : null, concurso_id || null, req.params.id, req.user.id);
   res.json({ ok: true });
 });
 

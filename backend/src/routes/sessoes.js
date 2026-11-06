@@ -70,14 +70,15 @@ function buildRelatorio(sessionId, userId) {
 // ── POST / — cria sessão a partir dos filtros do construtor ──
 router.post('/', (req, res) => {
   const {
-    curso_id, aula_ids, disciplina, banca, dificuldade, ano, origem,
+    curso_id, aula_ids, concurso_id, disciplina, banca, dificuldade, ano, origem,
     status_filtro, quantidade,
   } = req.body;
+  const modo = req.body.modo === 'simulado' ? 'simulado' : 'treinamento';
 
   const qtd = parseInt(quantidade, 10);
   if (!qtd || qtd < 1) return res.status(400).json({ error: 'quantidade inválida' });
 
-  // Resolve o conjunto efetivo de aulas (Assunto), inclusive quando só "Curso" foi escolhido
+  // Resolve o conjunto efetivo de aulas (Assunto), inclusive quando só "Curso" ou "Concurso" foi escolhido
   let effectiveAulaIds = null;
   if (Array.isArray(aula_ids) && aula_ids.length) {
     effectiveAulaIds = aula_ids;
@@ -85,6 +86,14 @@ router.post('/', (req, res) => {
     const rows = db.prepare(`
       SELECT a.id FROM aulas a JOIN modulos m ON m.id = a.modulo_id WHERE m.curso_id = ?
     `).all(curso_id);
+    effectiveAulaIds = rows.map(r => r.id);
+  } else if (concurso_id) {
+    const rows = db.prepare(`
+      SELECT a.id FROM aulas a
+      JOIN modulos m ON m.id = a.modulo_id
+      JOIN cursos c  ON c.id = m.curso_id
+      WHERE c.concurso_id = ?
+    `).all(concurso_id);
     effectiveAulaIds = rows.map(r => r.id);
   }
 
@@ -139,6 +148,17 @@ router.post('/', (req, res) => {
     });
   }
 
+  // ── Simulado: prioriza questões nunca usadas em simulados anteriores ──
+  if (modo === 'simulado') {
+    const used = db.prepare(`
+      SELECT DISTINCT t.question_id FROM tentativas t
+      JOIN sessoes s ON s.id = t.session_id
+      WHERE t.user_id = ? AND s.modo = 'simulado'
+    `).all(req.user.id);
+    const usedSet = new Set(used.map(r => r.question_id));
+    combined = [...combined.filter(q => !usedSet.has(q.id)), ...combined.filter(q => usedSet.has(q.id))];
+  }
+
   const quantidade_encontrada = Math.min(qtd, combined.length);
   const selecionadas = combined.slice(0, quantidade_encontrada);
   const ids = selecionadas.map(q => q.id);
@@ -152,9 +172,9 @@ router.post('/', (req, res) => {
   }
 
   const { lastInsertRowid } = db.prepare(`
-    INSERT INTO sessoes (user_id, status, filtros_json, question_ids_json, quantidade_solicitada, quantidade_encontrada)
-    VALUES (?, 'aberta', ?, ?, ?, ?)
-  `).run(req.user.id, JSON.stringify(req.body), JSON.stringify(ids), qtd, quantidade_encontrada);
+    INSERT INTO sessoes (user_id, status, filtros_json, question_ids_json, quantidade_solicitada, quantidade_encontrada, modo)
+    VALUES (?, 'aberta', ?, ?, ?, ?, ?)
+  `).run(req.user.id, JSON.stringify(req.body), JSON.stringify(ids), qtd, quantidade_encontrada, modo);
 
   res.json({
     session_id: lastInsertRowid,
@@ -165,11 +185,12 @@ router.post('/', (req, res) => {
   });
 });
 
-// ── GET /aberta — última sessão em aberto do usuário ──
+// ── GET /aberta — última sessão em aberto do usuário (treinamento por padrão) ──
 router.get('/aberta', (req, res) => {
+  const modo = req.query.modo === 'simulado' ? 'simulado' : 'treinamento';
   const sessao = db.prepare(`
-    SELECT * FROM sessoes WHERE user_id = ? AND status = 'aberta' ORDER BY criada_em DESC LIMIT 1
-  `).get(req.user.id);
+    SELECT * FROM sessoes WHERE user_id = ? AND status = 'aberta' AND modo = ? ORDER BY criada_em DESC LIMIT 1
+  `).get(req.user.id, modo);
   if (!sessao) return res.json({ session: null });
 
   const total = JSON.parse(sessao.question_ids_json).length;
@@ -211,9 +232,21 @@ router.post('/:id/finalizar', (req, res) => {
   const sessao = db.prepare('SELECT * FROM sessoes WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!sessao) return res.status(404).json({ error: 'Sessão não encontrada' });
 
+  const wasAberta = sessao.status === 'aberta'; // evita duplicar a ponte legada se finalizar for chamado de novo
   db.prepare(`UPDATE sessoes SET status = 'finalizada', finalizada_em = datetime('now') WHERE id = ?`).run(sessao.id);
 
   const relatorio = buildRelatorio(sessao.id, req.user.id);
+
+  // Ponte com a tabela legada `simulados`, usada por stats.js / home.astro ("Últimos simulados")
+  if (wasAberta && sessao.modo === 'simulado') {
+    const filtros = JSON.parse(sessao.filtros_json || '{}');
+    const disc = filtros.concurso_id
+      ? (db.prepare('SELECT nome FROM concursos WHERE id = ?').get(filtros.concurso_id)?.nome || null)
+      : null;
+    db.prepare('INSERT INTO simulados (user_id, disc, total, acertos, duration_s) VALUES (?, ?, ?, ?, ?)')
+      .run(req.user.id, disc, relatorio.total, relatorio.acertos, req.body.duration_s || null);
+  }
+
   res.json(relatorio);
 });
 

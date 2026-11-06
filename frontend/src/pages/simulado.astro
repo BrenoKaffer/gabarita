@@ -23,7 +23,24 @@ import MainLayout from '../layouts/MainLayout.astro';
     <p class="text-xs text-dark/40 mt-0.5">Configure e comece</p>
   </div>
 
+  <!-- Simulado em andamento (se houver) -->
+  <div id="resume-banner" class="card mb-6 hidden flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <p class="font-semibold text-dark text-sm">Você tem um simulado em andamento</p>
+      <p id="resume-sub" class="text-xs text-dark/50 mt-0.5"></p>
+    </div>
+    <button id="btn-resume-sim" class="btn-primary text-sm px-4 py-2">Continuar →</button>
+  </div>
+
   <div class="max-w-lg flex flex-col gap-6">
+
+    <!-- Concurso -->
+    <div>
+      <label class="text-sm font-semibold text-dark mb-2 block">Concurso</label>
+      <select id="sim-concurso" class="input text-sm">
+        <option value="">Geral (misto)</option>
+      </select>
+    </div>
 
     <!-- Disciplina -->
     <div>
@@ -153,15 +170,16 @@ import MainLayout from '../layouts/MainLayout.astro';
 
 <script>
 const token = localStorage.getItem('gab_token');
-let allQuestions: any[] = [];
+let session: any = null;
 let simQuestions: any[] = [];
-let simAnswers: Record<number, string> = {};
+let simAnswers: Record<string, string> = {};
 let simIdx    = 0;
 let elapsed   = 0;
 let timeLimit = 60 * 60; // default 1h em segundos
 let startTime = 0;
 let timerInterval: any = null;
 let simCount  = 20;
+let finalizing = false;
 
 // ── Opções de config ──
 document.querySelectorAll('[data-count]').forEach(btn => {
@@ -179,54 +197,72 @@ document.querySelectorAll('[data-time]').forEach(btn => {
   });
 });
 
-async function loadQuestions() {
-  allQuestions = await fetch('/questions.json').then(r => r.json());
-  const DISC_NAMES: Record<string, string> = {
-    '':      'Misto (todas)',
-    'ADM':   'Administração Pública',
-    'ARQ':   'Arquivologia',
-    'ATEND': 'Atendimento ao Público',
-    'DADM':  'Direito Administrativo',
-    'ETICA': 'Ética no Serviço Público',
-    'INFO':  'Informática',
-    'LGPD':  'LGPD / Proteção de Dados',
-    'LIC':   'Licitações e Contratos',
-    'LOG':   'Raciocínio Lógico',
-    'LP':    'Língua Portuguesa',
-    'ORC':   'Orçamento Público',
-    'PROC':  'Gestão de Processos',
-    'RED':   'Redação Oficial',
-  };
-  const discs = [...new Set<string>(allQuestions.map((q: any) => q.disc))].filter(Boolean).sort();
-  const sel   = document.getElementById('sim-disc') as HTMLSelectElement;
-  for (const d of discs) {
-    const label = DISC_NAMES[d] ?? d;
-    sel.insertAdjacentHTML('beforeend', `<option value="${d}">${label}</option>`);
+async function initConfig() {
+  const [concursosRes, metaRes, abertaRes] = await Promise.all([
+    fetch('/api/concursos'),
+    fetch('/api/questoes/meta', { headers: { Authorization: `Bearer ${token}` } }),
+    fetch('/api/sessoes/aberta?modo=simulado', { headers: { Authorization: `Bearer ${token}` } }),
+  ]);
+
+  const concursos = concursosRes.ok ? await concursosRes.json() : [];
+  (document.getElementById('sim-concurso') as HTMLSelectElement).innerHTML =
+    '<option value="">Geral (misto)</option>' +
+    concursos.map((c: any) => `<option value="${c.id}">${c.nome}</option>`).join('');
+
+  const meta = metaRes.ok ? await metaRes.json() : { disciplinas: [] };
+  const sel = document.getElementById('sim-disc') as HTMLSelectElement;
+  for (const d of meta.disciplinas || []) {
+    sel.insertAdjacentHTML('beforeend', `<option value="${d}">${d}</option>`);
+  }
+
+  const aberta = abertaRes.ok ? await abertaRes.json() : { session: null };
+  if (aberta.session) {
+    document.getElementById('resume-banner')!.classList.remove('hidden');
+    document.getElementById('resume-sub')!.textContent =
+      `${aberta.respondidas_count}/${aberta.total} respondidas — retome de onde parou.`;
+    document.getElementById('btn-resume-sim')!.addEventListener('click', () => loadSession(aberta.session.id));
   }
 }
 
-function shuffle(arr: any[]) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+document.getElementById('btn-start-sim')!.addEventListener('click', async () => {
+  const concursoId = (document.getElementById('sim-concurso') as HTMLSelectElement).value || undefined;
+  const disc       = (document.getElementById('sim-disc') as HTMLSelectElement).value || undefined;
 
-document.getElementById('btn-start-sim')!.addEventListener('click', () => {
-  const disc = (document.getElementById('sim-disc') as HTMLSelectElement).value;
-  const pool = disc ? allQuestions.filter((q: any) => q.disc === disc) : allQuestions;
-  simQuestions = shuffle(pool).slice(0, simCount);
-  simAnswers   = {};
-  simIdx       = 0;
-  startTime    = Date.now();
+  const btn = document.getElementById('btn-start-sim') as HTMLButtonElement;
+  btn.disabled = true; btn.textContent = 'Preparando…';
+
+  const res = await fetch('/api/sessoes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ concurso_id: concursoId, disciplina: disc, quantidade: simCount, modo: 'simulado' }),
+  });
+  btn.disabled = false; btn.textContent = 'Começar simulado →';
+  if (!res.ok) return;
+  const data = await res.json();
+  await loadSession(data.session_id, data.quantidade_encontrada < data.quantidade_solicitada);
+});
+
+async function loadSession(id: number, avisoInsuficiente = false) {
+  const res = await fetch(`/api/sessoes/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) return;
+  const data = await res.json();
+  session = data.session;
+  simQuestions = data.questions;
+  simAnswers = {};
+  for (const q of simQuestions) {
+    if (data.respostas[q.id]) simAnswers[q.id] = data.respostas[q.id].chosen;
+  }
+  simIdx = simQuestions.findIndex((q: any) => !simAnswers[q.id]);
+  if (simIdx === -1) simIdx = 0;
+  startTime = Date.now();
 
   document.getElementById('config-panel')!.classList.add('hidden');
   document.getElementById('sim-panel')!.classList.remove('hidden');
 
+  const concursoLabel = (document.getElementById('sim-concurso') as HTMLSelectElement).selectedOptions[0]?.textContent || 'Misto';
   const label = document.getElementById('sim-disc-label')!;
-  label.textContent = `${disc || 'Misto'} · ${simQuestions.length} questões`;
+  label.textContent = `${concursoLabel} · ${simQuestions.length} questões` +
+    (avisoInsuficiente ? ' (o banco não tinha a quantidade pedida)' : '');
 
   buildNavBar();
   renderSim();
@@ -235,7 +271,7 @@ document.getElementById('btn-start-sim')!.addEventListener('click', () => {
     document.getElementById('timer-wrap')!.classList.add('flex');
     startTimer();
   }
-});
+}
 
 function buildNavBar() {
   const bar = document.getElementById('q-nav-bar')!;
@@ -251,13 +287,13 @@ function buildNavBar() {
 }
 
 function updateNavBar() {
-  simQuestions.forEach((_, i) => {
+  simQuestions.forEach((q, i) => {
     const btn = document.getElementById(`qnav-${i}`);
     if (!btn) return;
     btn.className = 'w-7 h-7 rounded text-xs font-semibold border transition-all ';
     if (i === simIdx) {
       btn.className += 'border-dark bg-dark text-green';
-    } else if (simAnswers[i]) {
+    } else if (simAnswers[q.id]) {
       btn.className += 'border-green bg-green text-dark';
     } else {
       btn.className += 'border-dark/20 bg-white text-dark/40';
@@ -280,7 +316,7 @@ function startTimer() {
 
 function renderSim() {
   const q      = simQuestions[simIdx];
-  const chosen = simAnswers[simIdx];
+  const chosen = simAnswers[q.id];
   const total  = simQuestions.length;
 
   document.getElementById('sim-counter')!.textContent = `${simIdx + 1} / ${total}`;
@@ -320,10 +356,18 @@ function renderSim() {
     </div>`;
 
   document.querySelectorAll('#sim-alts .alt-opt').forEach(btn => {
-    btn.addEventListener('click', () => {
-      simAnswers[simIdx] = (btn as HTMLElement).dataset.alt || '';
+    btn.addEventListener('click', async () => {
+      const alt = (btn as HTMLElement).dataset.alt || '';
+      simAnswers[q.id] = alt;
       updateNavBar();
       renderSim();
+      // Grava a resposta (histórico/retomada), mas a UI não mostra certo/errado agora —
+      // só no resultado final, depois de "Finalizar".
+      await fetch('/api/progress/answer', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question_id: q.id, chosen: alt, session_id: session.id }),
+      });
     });
   });
 
@@ -331,52 +375,52 @@ function renderSim() {
 }
 
 async function finishSim() {
+  if (finalizing) return;
+  finalizing = true;
   clearInterval(timerInterval);
   elapsed = Math.floor((Date.now() - startTime) / 1000);
 
   document.getElementById('sim-panel')!.classList.add('hidden');
   document.getElementById('result-panel')!.classList.remove('hidden');
 
-  const answers = simQuestions.map((q, i) => ({ question_id: q.id, chosen: simAnswers[i] || '' }));
-  const disc    = (document.getElementById('sim-disc') as HTMLSelectElement)?.value || '';
-
-  const res  = await fetch('/api/progress/simulado', {
+  const res = await fetch(`/api/sessoes/${session.id}/finalizar`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ disc, total: simQuestions.length, acertos: 0, duration_s: elapsed, answers }),
+    body: JSON.stringify({ duration_s: elapsed }),
   });
-  const data = await res.json();
+  const relatorio = await res.json();
 
-  const responded = answers.filter(a => a.chosen).length;
-  const skipped   = answers.length - responded;
-  const acertos   = data.acertos ?? 0;
-  const pct       = responded ? Math.round((acertos / simQuestions.length) * 100) : 0;
+  const skipped = relatorio.total - relatorio.respondidas;
   const mins = Math.floor(elapsed / 60), secs = elapsed % 60;
 
-  document.getElementById('res-pct')!.textContent   = pct + '%';
-  document.getElementById('res-score')!.textContent = `${acertos} de ${simQuestions.length} corretas`;
+  document.getElementById('res-pct')!.textContent   = relatorio.aproveitamento + '%';
+  document.getElementById('res-score')!.textContent = `${relatorio.acertos} de ${relatorio.total} corretas`;
   document.getElementById('res-time')!.textContent  = `Tempo: ${mins}m${secs.toString().padStart(2,'0')}s`;
-  document.getElementById('res-respondidas')!.textContent = String(responded);
-  document.getElementById('res-acertos')!.textContent     = String(acertos);
+  document.getElementById('res-respondidas')!.textContent = String(relatorio.respondidas);
+  document.getElementById('res-acertos')!.textContent     = String(relatorio.acertos);
   document.getElementById('res-puladas')!.textContent     = String(skipped);
   document.getElementById('res-medal')!.textContent =
-    pct >= 70 ? '🏆' : pct >= 50 ? '📈' : '💪';
+    relatorio.aproveitamento >= 70 ? '🏆' : relatorio.aproveitamento >= 50 ? '📈' : '💪';
 
-  // Breakdown por disciplina
-  if (!disc && data.byDisc?.length) {
+  // Desempenho por assunto (fallback por disciplina)
+  const fonte = Object.keys(relatorio.porAssunto || {}).length ? relatorio.porAssunto : (relatorio.porDisciplina || {});
+  const entries = Object.entries(fonte) as [string, { total: number; acertos: number }][];
+  if (entries.length) {
     const bd = document.getElementById('res-breakdown')!;
     const rows = document.getElementById('res-breakdown-rows')!;
     bd.classList.remove('hidden');
-    for (const { d, acertos: ac, total: tot } of data.byDisc) {
-      const p  = tot ? Math.round((ac / tot) * 100) : 0;
-      const bg = p >= 70 ? '#b9ff66' : (p >= 50 ? '#fde68a' : '#fee2e2');
-      const fg = p >= 70 ? '#166534' : (p >= 50 ? '#854d0e' : '#991b1b');
-      rows.insertAdjacentHTML('beforeend', `
-        <div class="res-disc-row">
-          <span class="text-sm font-medium text-dark">${d}</span>
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:${bg};color:${fg}">${ac}/${tot} — ${p}%</span>
-        </div>`);
-    }
+    rows.innerHTML = entries.map(([nome, s]) => {
+      const p = Math.round((s.acertos / s.total) * 100);
+      const color = p >= 70 ? '#b9ff66' : p >= 40 ? '#facc15' : '#ef4444';
+      return `
+        <div class="disc-row">
+          <div>
+            <div class="text-sm font-medium text-dark">${nome}</div>
+            <div class="disc-bar-wrap"><div class="disc-bar-fill" style="width:${p}%;background:${color}"></div></div>
+          </div>
+          <span class="text-sm font-semibold text-dark/70 tabular-nums">${s.acertos}/${s.total} — ${p}%</span>
+        </div>`;
+    }).join('');
   }
 }
 
@@ -384,5 +428,5 @@ document.getElementById('sim-next')?.addEventListener('click', () => { simIdx++;
 document.getElementById('sim-prev')?.addEventListener('click', () => { simIdx--; renderSim(); });
 document.getElementById('sim-finish')?.addEventListener('click', finishSim);
 
-loadQuestions();
+initConfig();
 </script>

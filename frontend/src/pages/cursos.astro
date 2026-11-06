@@ -132,6 +132,10 @@ import MainLayout from '../layouts/MainLayout.astro';
           <input id="inp-titulo" type="text" class="input" placeholder="Ex: Cálculo I" />
         </div>
         <div>
+          <label class="text-sm font-medium mb-1.5 block">Concurso <span class="text-dark/30 font-normal">(opcional)</span></label>
+          <select id="inp-concurso" class="input text-sm"><option value="">Geral (sem concurso)</option></select>
+        </div>
+        <div>
           <label class="text-sm font-medium mb-1.5 block">Descrição <span class="text-dark/30 font-normal">(opcional)</span></label>
           <textarea id="inp-desc" class="input resize-none" rows="2" placeholder="Breve descrição…"></textarea>
         </div>
@@ -303,6 +307,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     overlay.classList.remove('show');
     pdfFile = null; estruturaGerada = null; capaBase64 = null;
     (document.getElementById('inp-titulo') as HTMLInputElement).value = '';
+    (document.getElementById('inp-concurso') as HTMLSelectElement).value = '';
     (document.getElementById('inp-desc') as HTMLTextAreaElement).value = '';
     (document.getElementById('inp-json') as HTMLTextAreaElement).value = '';
     (document.getElementById('pdf-label') as HTMLElement).textContent = 'Clique ou arraste o PDF';
@@ -529,13 +534,14 @@ import MainLayout from '../layouts/MainLayout.astro';
   document.getElementById('btn-criar-manual')!.addEventListener('click', async () => {
     const titulo   = (document.getElementById('inp-titulo') as HTMLInputElement).value.trim();
     const descricao = (document.getElementById('inp-desc') as HTMLTextAreaElement).value.trim();
+    const concursoId = (document.getElementById('inp-concurso') as HTMLSelectElement).value || undefined;
     if (!titulo) { (document.getElementById('inp-titulo') as HTMLInputElement).focus(); return; }
     const btn = document.getElementById('btn-criar-manual') as HTMLButtonElement;
     btn.textContent = 'Criando…'; btn.disabled = true;
     const res = await fetch('/api/cursos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ titulo, descricao, cor, capa_base64: capaBase64 }),
+      body: JSON.stringify({ titulo, descricao, cor, capa_base64: capaBase64, concurso_id: concursoId }),
     });
     btn.textContent = 'Criar'; btn.disabled = false;
     if (res.ok) { const { id } = await res.json(); location.href = `/curso?id=${id}`; }
@@ -545,6 +551,7 @@ import MainLayout from '../layouts/MainLayout.astro';
   document.getElementById('btn-criar-preview')!.addEventListener('click', async () => {
     const titulo   = (document.getElementById('preview-titulo') as HTMLInputElement).value.trim();
     const descricao = (document.getElementById('preview-desc') as HTMLInputElement).value.trim();
+    const concursoId = (document.getElementById('inp-concurso') as HTMLSelectElement).value || undefined;
     if (!titulo) { (document.getElementById('preview-titulo') as HTMLInputElement).focus(); return; }
     const modulos = readPreviewModulos();
     if (!modulos.length) {
@@ -560,7 +567,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     const res = await fetch('/api/importar-curso/criar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ titulo, descricao, cor: estruturaGerada?.cor || cor, modulos }),
+      body: JSON.stringify({ titulo, descricao, cor: estruturaGerada?.cor || cor, modulos, concurso_id: concursoId }),
     });
     btn.textContent = 'Criar curso'; btn.disabled = false;
 
@@ -572,6 +579,15 @@ import MainLayout from '../layouts/MainLayout.astro';
     }
   });
 
+  async function loadConcursosSelect() {
+    const res = await fetch('/api/concursos');
+    const concursos = res.ok ? await res.json() : [];
+    (document.getElementById('inp-concurso') as HTMLSelectElement).innerHTML =
+      '<option value="">Geral (sem concurso)</option>' +
+      concursos.map((c: any) => `<option value="${c.id}">${c.nome}</option>`).join('');
+  }
+
   load();
+  loadConcursosSelect();
 </script>
 </MainLayout>
