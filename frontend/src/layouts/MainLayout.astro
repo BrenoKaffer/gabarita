@@ -626,6 +626,7 @@ const { title = 'Gabarita', showNav = true } = Astro.props;
 
   loadSidebarStats();
   loadNotifications();
+  (window as any).refreshSidebarStats = () => { loadSidebarStats(); loadNotifications(); };
 
   // ── Relógio do rodapé ──
   function tickClock() {

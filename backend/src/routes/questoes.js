@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/auth.js';
 const router = Router();
 
 // Convert DB row to questions.json-compatible format
-function toQFormat(q) {
+export function toQFormat(q) {
   let alts = {};
   try { alts = JSON.parse(q.alternativas); } catch {}
   const letters = Object.keys(alts);
@@ -19,6 +19,8 @@ function toQFormat(q) {
     subtopico: q.subtopico || '',
     dificuldade: q.dificuldade || 'medio',
     explicacao: q.explicacao || '',
+    aula_id: q.aula_id || null,
+    origem: q.origem || 'banco_proprio',
     source: 'import',
   };
 }
@@ -44,13 +46,14 @@ router.post('/import', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'questoes deve ser um array não vazio' });
 
   const insertQ = db.prepare(`
-    INSERT INTO questoes (id, banca, ano, disciplina, subtopico, dificuldade, enunciado, alternativas, gabarito, explicacao)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO questoes (id, banca, ano, disciplina, subtopico, dificuldade, enunciado, alternativas, gabarito, explicacao, aula_id, origem)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       banca=excluded.banca, ano=excluded.ano, disciplina=excluded.disciplina,
       subtopico=excluded.subtopico, dificuldade=excluded.dificuldade,
       enunciado=excluded.enunciado, alternativas=excluded.alternativas,
-      gabarito=excluded.gabarito, explicacao=excluded.explicacao
+      gabarito=excluded.gabarito, explicacao=excluded.explicacao,
+      aula_id=excluded.aula_id, origem=excluded.origem
   `);
 
   const checkGab  = db.prepare('SELECT source FROM gabarito WHERE question_id = ?');
@@ -63,7 +66,8 @@ router.post('/import', requireAuth, (req, res) => {
       insertQ.run(
         q.id, q.banca || null, q.ano || null, q.disciplina || null,
         q.subtopico || null, q.dificuldade || 'medio',
-        q.enunciado, JSON.stringify(q.alternativas), q.gabarito, q.explicacao || null
+        q.enunciado, JSON.stringify(q.alternativas), q.gabarito, q.explicacao || null,
+        q.aula_id || null, q.origem || 'banco_proprio'
       );
       // Don't overwrite gabarito for static questions (source != 'import')
       const existing = checkGab.get(q.id);

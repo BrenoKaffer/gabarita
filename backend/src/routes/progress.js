@@ -7,7 +7,7 @@ router.use(requireAuth);
 
 // Registrar resposta a uma questão
 router.post('/answer', (req, res) => {
-  const { question_id, chosen } = req.body;
+  const { question_id, chosen, session_id, confidence, time_spent_s } = req.body;
   if (!question_id || !chosen)
     return res.status(400).json({ error: 'question_id e chosen são obrigatórios' });
 
@@ -21,6 +21,12 @@ router.post('/answer', (req, res) => {
       ON CONFLICT(user_id, question_id) DO UPDATE SET chosen=excluded.chosen, correct=excluded.correct, answered_at=datetime('now')
     `).run(req.user.id, question_id, chosen, correct);
   }
+
+  // Tentativa: histórico completo, nunca sobrescrito (independe de haver gabarito)
+  db.prepare(`
+    INSERT INTO tentativas (user_id, session_id, question_id, chosen, correct, confidence, time_spent_s)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(req.user.id, session_id || null, question_id, chosen, correct, confidence || null, time_spent_s || null);
 
   if (correct !== null) updateStreak(req.user.id);
 

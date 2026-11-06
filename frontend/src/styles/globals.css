@@ -200,3 +200,25 @@
   padding: 10px 0; border-bottom: 1px solid rgba(25,26,35,0.07);
 }
 .res-disc-row:last-child { border-bottom: none; }
+
+/* ── Desempenho por disciplina/assunto — global (usado via innerHTML dinâmico) ── */
+.disc-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.disc-bar-wrap { height: 6px; background: rgba(25,26,35,0.07); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.disc-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+
+/* ── Confiança na resposta (tela de resolução) — global (usado via innerHTML dinâmico) ──
+   display:none por padrão (não depende da classe utilitária .hidden do Tailwind, que tem
+   a mesma especificidade e perderia para esta regra dependendo da ordem no bundle final) */
+.confidence-row { display: none; gap: 8px; margin: 10px 16px 0; }
+.confidence-row.show { display: flex; }
+.confidence-btn {
+  flex: 1; padding: 8px 10px; border-radius: 10px;
+  border: 1.5px solid rgba(25,26,35,0.15); background: white;
+  font-size: 0.75rem; font-weight: 600; color: rgba(25,26,35,0.55);
+  cursor: pointer; transition: all 0.15s;
+}
+.confidence-btn:hover { border-color: #191a23; color: #191a23; }
+.confidence-btn.selected { background: #191a23; border-color: #191a23; color: #b9ff66; }
+
+/* ── Botão "Responder" desabilitado (tela de resolução) — global (usado via innerHTML dinâmico) ── */
+#btn-responder:disabled { opacity: 0.4; cursor: not-allowed; }

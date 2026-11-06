@@ -161,6 +161,32 @@ db.exec(`
     importado_em TEXT DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS sessoes (
+    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id                INTEGER NOT NULL REFERENCES users(id),
+    status                 TEXT NOT NULL DEFAULT 'aberta',
+    filtros_json           TEXT NOT NULL,
+    question_ids_json      TEXT NOT NULL,
+    quantidade_solicitada  INTEGER,
+    quantidade_encontrada  INTEGER,
+    criada_em              TEXT DEFAULT (datetime('now')),
+    finalizada_em          TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS tentativas (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(id),
+    session_id    INTEGER REFERENCES sessoes(id),
+    question_id   TEXT NOT NULL,
+    chosen        TEXT NOT NULL,
+    correct       INTEGER,
+    confidence    TEXT,
+    time_spent_s  INTEGER,
+    respondida_em TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_tentativas_session ON tentativas(session_id);
+  CREATE INDEX IF NOT EXISTS idx_tentativas_user ON tentativas(user_id);
+
   CREATE TABLE IF NOT EXISTS agenda_eventos (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id   INTEGER NOT NULL REFERENCES users(id),
@@ -175,6 +201,8 @@ db.exec(`
 
 // Migrations
 try { db.prepare('ALTER TABLE cursos ADD COLUMN capa_base64 TEXT').run(); } catch {}
+try { db.prepare('ALTER TABLE questoes ADD COLUMN aula_id INTEGER REFERENCES aulas(id)').run(); } catch {}
+try { db.prepare('ALTER TABLE questoes ADD COLUMN origem TEXT').run(); } catch {}
 
 // Seed concursos se vazio
 const { c: concursosCount } = db.prepare('SELECT COUNT(*) AS c FROM concursos').get();

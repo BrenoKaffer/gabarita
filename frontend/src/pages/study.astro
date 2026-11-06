@@ -4,18 +4,32 @@ import MainLayout from '../layouts/MainLayout.astro';
 <MainLayout title="Resolver Questões">
 
 <style>
-  /* ── Status tabs ── */
-  .status-tab {
-    padding: 8px 14px; font-size: 0.75rem; font-weight: 600;
-    letter-spacing: 0.04em; color: rgba(25,26,35,0.4);
-    border-bottom: 2px solid transparent; cursor: pointer;
-    background: none; border-top: none; border-left: none; border-right: none;
-    transition: all 0.15s; white-space: nowrap;
+  /* ── Dashboard: cards de ação + tiles (markup estático, pode ser escopado) ── */
+  .action-card {
+    display: block; border-radius: 20px; border: 1.5px solid #191a23;
+    box-shadow: 0px 4px 0px #191a23; padding: 20px; width: 100%; text-align: left;
+    transition: transform 0.15s, box-shadow 0.15s; text-decoration: none; cursor: pointer;
   }
-  .status-tab:hover { color: #191a23; }
-  .status-tab.active { color: #191a23; border-bottom-color: #b9ff66; }
+  .action-card:hover { transform: translateY(-2px); box-shadow: 0px 6px 0px #191a23; }
+  .action-card:active { transform: translateY(2px); box-shadow: 0px 2px 0px #191a23; }
+  .action-icon {
+    width: 44px; height: 44px; border-radius: 12px; display: flex;
+    align-items: center; justify-content: center; margin-bottom: 12px;
+  }
+  .stat-tile {
+    background: white; border: 1.5px solid #191a23; border-radius: 16px;
+    padding: 16px; text-align: center;
+  }
 
-  /* ── Discipline chip ── */
+  /* ── Construtor de sessão ── */
+  .qty-chip {
+    padding: 8px 16px; border-radius: 10px; border: 1.5px solid rgba(25,26,35,0.15);
+    background: white; font-size: 0.875rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s; color: rgba(25,26,35,0.6);
+  }
+  .qty-chip:hover { border-color: #191a23; }
+  .qty-chip.active { background: #191a23; border-color: #191a23; color: #b9ff66; }
+
   .disc-chip {
     padding: 5px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 500;
     border: 1.5px solid rgba(25,26,35,0.2); background: white; color: rgba(25,26,35,0.6);
@@ -23,9 +37,6 @@ import MainLayout from '../layouts/MainLayout.astro';
   }
   .disc-chip:hover { border-color: #191a23; color: #191a23; }
   .disc-chip.active { background: #191a23; border-color: #191a23; color: white; }
-
-  /* ── Responder btn ── */
-  #btn-responder:disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* ── Empty state ── */
   .empty-state {
@@ -39,157 +50,483 @@ import MainLayout from '../layouts/MainLayout.astro';
   }
 </style>
 
-<!-- Top bar -->
-<div class="flex items-center justify-between mb-5 flex-wrap gap-3">
-  <div>
+<!-- ═══ STEP 1: Dashboard ═══ -->
+<div id="step-dashboard" class="max-w-3xl mx-auto">
+  <div class="mb-5">
     <h1 class="text-xl font-semibold">Resolver <span class="greenhead">Questões</span></h1>
-    <p id="q-total-label" class="text-xs text-dark/40 mt-0.5">Carregando…</p>
+    <p class="text-sm text-dark/50 mt-0.5">Pratique, identifique lacunas e evolua.</p>
   </div>
-  <!-- A+ / A- -->
-  <div class="flex items-center gap-px border border-dark/15 rounded-lg overflow-hidden text-sm">
-    <button id="btn-fa-down"
-      class="px-3 py-1.5 hover:bg-dark/5 text-dark/60 hover:text-dark transition-colors font-medium">A−</button>
-    <div class="w-px h-6 bg-dark/10"></div>
-    <button id="btn-fa-up"
-      class="px-3 py-1.5 hover:bg-dark/5 text-dark/60 hover:text-dark transition-colors font-semibold">A+</button>
+
+  <div id="dash-cards" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+    <a id="card-continuar" href="#" class="action-card bg-dark" style="display:none">
+      <div class="action-icon bg-white/10">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 12.75l3-1.75"/>
+        </svg>
+      </div>
+      <h3 class="font-semibold text-white">Continuar sessão</h3>
+      <p id="card-continuar-sub" class="text-xs text-white/50 mt-1">Retome de onde parou.</p>
+    </a>
+    <button id="card-personalizar" class="action-card bg-green sm:col-span-2">
+      <div class="action-icon bg-dark/10">
+        <svg class="w-5 h-5 text-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"/>
+        </svg>
+      </div>
+      <h3 class="font-semibold text-dark">Personalizar</h3>
+      <p class="text-xs text-dark/60 mt-1">Escolha seus próprios filtros.</p>
+    </button>
+  </div>
+
+  <p class="text-xs font-semibold text-dark/40 uppercase tracking-wide mb-2.5">Seu desempenho recente</p>
+  <div class="grid grid-cols-3 gap-3">
+    <div class="stat-tile">
+      <div class="text-2xl font-semibold text-dark tabular-nums" id="db-respondidas">—</div>
+      <div class="text-xs text-dark/50 mt-1">Respondidas</div>
+    </div>
+    <div class="stat-tile" style="background:#b9ff66">
+      <div class="text-2xl font-semibold text-dark tabular-nums" id="db-pct">—</div>
+      <div class="text-xs text-dark/60 mt-1">Aproveitamento</div>
+    </div>
+    <div class="stat-tile">
+      <div class="text-2xl font-semibold text-dark tabular-nums" id="db-erros">—</div>
+      <div class="text-xs text-dark/50 mt-1">Erros</div>
+    </div>
   </div>
 </div>
 
-<!-- Status tabs -->
-<div class="flex gap-0 border-b border-dark/10 mb-4 overflow-x-auto">
-  <button class="status-tab active" data-status="all">TODAS</button>
-  <button class="status-tab" data-status="unanswered">NÃO RESPONDIDAS</button>
-  <button class="status-tab" data-status="correct">ACERTEI</button>
-  <button class="status-tab" data-status="wrong">ERREI</button>
-</div>
-
-<!-- Discipline chips -->
-<div id="disc-chips" class="flex flex-wrap gap-2 mb-5"></div>
-
-<!-- Progress -->
-<div class="flex items-center gap-3 mb-4 text-xs text-dark/40">
-  <span id="q-counter">0 / 0</span>
-  <div class="flex-1 h-1 rounded-full bg-dark/10 overflow-hidden">
-    <div id="q-progress" class="h-full bg-green rounded-full transition-all duration-300" style="width:0%"></div>
+<!-- ═══ STEP 2: Construtor de sessão ═══ -->
+<div id="step-builder" class="max-w-3xl mx-auto hidden">
+  <div class="flex items-center gap-2 mb-5">
+    <button id="btn-builder-back" class="text-dark/40 hover:text-dark transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <div>
+      <h2 class="text-lg font-semibold">Nova sessão de questões</h2>
+      <p class="text-xs text-dark/40">Configure sua prática.</p>
+    </div>
   </div>
-  <span id="q-stats-inline" class="hidden sm:block"></span>
+
+  <div class="flex flex-col gap-5">
+    <div>
+      <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1.5">1. Curso <span class="text-dark/30 font-normal normal-case">(opcional)</span></label>
+      <select id="b-curso" class="input text-sm"><option value="">Todos os cursos</option></select>
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1.5">2. Disciplina</label>
+      <select id="b-disciplina" class="input text-sm"><option value="">Todas</option></select>
+    </div>
+
+    <div id="b-assunto-wrap" class="opacity-40 pointer-events-none transition-opacity">
+      <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1.5">3. Assuntos <span class="font-normal normal-case">(selecione um curso)</span></label>
+      <div id="b-assunto-list" class="flex flex-col gap-0.5 max-h-48 overflow-y-auto border border-dark/10 rounded-xl p-1.5"></div>
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1.5">4. Filtros</label>
+      <div class="grid grid-cols-2 gap-2.5">
+        <select id="b-banca" class="input text-sm"><option value="">Banca: Todas</option></select>
+        <select id="b-dificuldade" class="input text-sm">
+          <option value="">Dificuldade: Todas</option>
+          <option value="facil">Fácil</option>
+          <option value="medio">Médio</option>
+          <option value="dificil">Difícil</option>
+        </select>
+        <select id="b-ano" class="input text-sm"><option value="">Ano: Todos</option></select>
+        <select id="b-origem" class="input text-sm">
+          <option value="">Origem: Todas</option>
+          <option value="banco_proprio">Banco próprio</option>
+          <option value="prova_anterior">Prova anterior</option>
+          <option value="ia">Gerada por IA</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1.5">Status</label>
+      <div class="flex gap-2 flex-wrap" id="b-status">
+        <button class="disc-chip active" data-status="todas">Todas</button>
+        <button class="disc-chip" data-status="nao_respondidas">Não respondidas</button>
+        <button class="disc-chip" data-status="acertei">Acertei</button>
+        <button class="disc-chip" data-status="errei">Errei</button>
+      </div>
+    </div>
+
+    <div>
+      <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-1.5">5. Quantidade</label>
+      <div class="flex gap-2 flex-wrap" id="b-quantidade">
+        <button class="qty-chip" data-qtd="5">5</button>
+        <button class="qty-chip active" data-qtd="10">10</button>
+        <button class="qty-chip" data-qtd="20">20</button>
+        <button class="qty-chip" data-qtd="30">30</button>
+        <button class="qty-chip" data-qtd="50">50</button>
+      </div>
+    </div>
+
+    <div id="builder-error" class="hidden text-sm text-red-600 bg-red-50 rounded-btn px-3 py-2"></div>
+
+    <button id="btn-encontrar" class="btn-primary text-sm py-3">Encontrar questões</button>
+  </div>
 </div>
 
-<!-- Question area -->
-<div id="question-area" class="mb-4"></div>
+<!-- ═══ STEP 3: Confirmação ═══ -->
+<div id="step-confirmacao" class="max-w-3xl mx-auto hidden">
+  <h2 class="text-lg font-semibold mb-1">Sua sessão está pronta</h2>
+  <p class="text-sm text-dark/50 mb-5">Confira antes de começar.</p>
 
-<!-- Nav -->
-<div class="flex gap-3">
-  <button id="btn-prev" class="btn-secondary text-sm px-4 py-2.5" disabled>← Anterior</button>
-  <button id="btn-next" class="btn-primary text-sm px-4 py-2.5 ml-auto">Próxima →</button>
+  <div class="grid grid-cols-2 gap-3 mb-5">
+    <div class="stat-tile">
+      <div class="text-3xl font-semibold text-dark tabular-nums" id="conf-qtd">0</div>
+      <div class="text-xs text-dark/50 mt-1">Questões encontradas</div>
+    </div>
+    <div class="stat-tile">
+      <div class="text-3xl font-semibold text-dark tabular-nums" id="conf-tempo">0</div>
+      <div class="text-xs text-dark/50 mt-1">Minutos estimados</div>
+    </div>
+  </div>
+
+  <div id="conf-warning" class="hidden text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-btn px-3 py-2.5 mb-5"></div>
+
+  <p class="text-xs font-semibold text-dark/40 uppercase tracking-wide mb-2">Distribuição</p>
+  <div id="conf-distribuicao" class="flex flex-col gap-1.5 mb-6 text-sm text-dark/70"></div>
+
+  <div class="flex gap-2">
+    <button id="btn-conf-voltar" class="btn-secondary flex-1 text-sm">Ajustar filtros</button>
+    <button id="btn-conf-iniciar" class="btn-primary flex-1 text-sm">Iniciar sessão →</button>
+  </div>
 </div>
+
+<!-- ═══ STEP 4: Resolução ═══ -->
+<div id="step-resolucao" class="hidden">
+  <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+    <div>
+      <h1 class="text-xl font-semibold">Resolvendo <span class="greenhead">Questões</span></h1>
+    </div>
+    <div class="flex items-center gap-px border border-dark/15 rounded-lg overflow-hidden text-sm">
+      <button id="btn-fa-down" class="px-3 py-1.5 hover:bg-dark/5 text-dark/60 hover:text-dark transition-colors font-medium">A−</button>
+      <div class="w-px h-6 bg-dark/10"></div>
+      <button id="btn-fa-up" class="px-3 py-1.5 hover:bg-dark/5 text-dark/60 hover:text-dark transition-colors font-semibold">A+</button>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 mb-4 text-xs text-dark/40">
+    <span id="q-counter">0 / 0</span>
+    <div class="flex-1 h-1 rounded-full bg-dark/10 overflow-hidden">
+      <div id="q-progress" class="h-full bg-green rounded-full transition-all duration-300" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div id="question-area" class="mb-4"></div>
+
+  <div class="flex gap-3">
+    <button id="btn-prev" class="btn-secondary text-sm px-4 py-2.5" disabled>← Anterior</button>
+    <button id="btn-next" class="btn-primary text-sm px-4 py-2.5 ml-auto">Próxima →</button>
+  </div>
+</div>
+
+<!-- ═══ STEP 5: Relatório ═══ -->
+<div id="step-relatorio" class="max-w-3xl mx-auto hidden">
+  <h2 class="text-lg font-semibold mb-1">Sessão concluída!</h2>
+  <p class="text-sm text-dark/50 mb-5">Sua sessão de questões foi finalizada.</p>
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+    <div class="stat-tile">
+      <div class="text-2xl font-semibold text-dark tabular-nums" id="rel-respondidas">0</div>
+      <div class="text-xs text-dark/50 mt-1">Respondidas</div>
+    </div>
+    <div class="stat-tile" style="background:#b9ff66">
+      <div class="text-2xl font-semibold text-dark tabular-nums" id="rel-pct">0%</div>
+      <div class="text-xs text-dark/60 mt-1">Aproveitamento</div>
+    </div>
+    <div class="stat-tile">
+      <div class="text-2xl font-semibold text-dark tabular-nums" id="rel-acertos">0</div>
+      <div class="text-xs text-dark/50 mt-1">Acertos</div>
+    </div>
+    <div class="stat-tile">
+      <div class="text-2xl font-semibold text-dark tabular-nums" id="rel-erros">0</div>
+      <div class="text-xs text-dark/50 mt-1">Erros</div>
+    </div>
+  </div>
+
+  <p class="text-xs font-semibold text-dark/40 uppercase tracking-wide mb-2.5">Desempenho por assunto</p>
+  <div id="rel-desempenho" class="flex flex-col gap-3 mb-6"></div>
+
+  <div id="rel-recomendacao" class="hidden bg-dark/5 rounded-xl p-4 mb-6">
+    <p class="text-xs font-semibold text-dark/50 uppercase tracking-wide mb-1.5">Recomendação</p>
+    <p id="rel-recomendacao-text" class="text-sm text-dark/70"></p>
+  </div>
+
+  <div class="flex gap-2">
+    <button id="btn-rel-inicio" class="btn-secondary flex-1 text-sm">Voltar ao início</button>
+    <button id="btn-rel-nova" class="btn-primary flex-1 text-sm">Nova sessão</button>
+  </div>
+</div>
+
 </MainLayout>
 
 <script>
 const token = localStorage.getItem('gab_token');
 
-let questions: any[] = [];
-let filtered:  any[] = [];
-let current   = 0;
-let answered: Record<string, any> = {};
-let favorites = new Set<string>();
-let activeDisc   = '';
-let activeStatus = 'all';
-let fontSize = parseInt(localStorage.getItem('gab_fontsize') || '15');
+const STEP_IDS = ['step-dashboard', 'step-builder', 'step-confirmacao', 'step-resolucao', 'step-relatorio'];
+const STEP_LABELS: Record<string, string | null> = {
+  'step-dashboard': null,
+  'step-builder': 'Nova sessão',
+  'step-confirmacao': 'Confirmação',
+  'step-resolucao': 'Resolução',
+  'step-relatorio': 'Relatório',
+};
 
-// ── Init ──
-async function init() {
-  const [qRes, dbRes, ansRes, favRes] = await Promise.all([
-    fetch('/questions.json'),
-    fetch('/api/questoes', { headers: { Authorization: `Bearer ${token}` } }),
-    fetch('/api/progress/answered', { headers: { Authorization: `Bearer ${token}` } }),
-    fetch('/api/progress/favorites', { headers: { Authorization: `Bearer ${token}` } }),
-  ]);
-  const staticQs = await qRes.json();
-  const dbQs: any[] = dbRes.ok ? await dbRes.json() : [];
-  // Merge: DB questions first so they appear at the top of their discipline
-  const staticIds = new Set(staticQs.map((q: any) => q.id));
-  const newDbQs = dbQs.filter((q: any) => !staticIds.has(q.id));
-  questions = [...newDbQs, ...staticQs];
-  const ans  = await ansRes.json();
-  const favs = await favRes.json();
-
-  for (const a of ans) answered[a.question_id] = a;
-  for (const f of favs) favorites.add(f);
-
-  buildDiscChips();
-  applyFilters();
+function showStep(id: string) {
+  STEP_IDS.forEach(s => document.getElementById(s)!.classList.add('hidden'));
+  document.getElementById(id)!.classList.remove('hidden');
+  const label = STEP_LABELS[id];
+  (window as any).setBreadcrumb?.(label ? ['Gabarita', 'Questões', label] : ['Gabarita', 'Questões']);
 }
 
-function buildDiscChips() {
-  const discs = ['Todas', ...new Set<string>(questions.map((q: any) => q.disc)).values()].sort((a, b) =>
-    a === 'Todas' ? -1 : b === 'Todas' ? 1 : a.localeCompare(b));
-  const container = document.getElementById('disc-chips')!;
-  container.innerHTML = '';
-  for (const d of discs) {
-    const btn = document.createElement('button');
-    btn.className = 'disc-chip' + (d === 'Todas' ? ' active' : '');
-    btn.textContent = d;
-    btn.dataset.disc = d === 'Todas' ? '' : d;
-    btn.addEventListener('click', () => {
-      activeDisc = btn.dataset.disc || '';
-      container.querySelectorAll('.disc-chip').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
-      current = 0;
-      applyFilters();
-    });
-    container.appendChild(btn);
+// ── Estado ──
+let session: any = null;
+let questions: any[] = [];
+let current = 0;
+let answered: Record<string, any> = {};
+let favorites = new Set<string>();
+let flashcardCreated = new Set<string>();
+let fontSize = parseInt(localStorage.getItem('gab_fontsize') || '15');
+let questionStartedAt = 0;
+let selectedConfidence = '';
+let statusFiltro = 'todas';
+let quantidadeEscolhida = 10;
+let pendingSessionId: number | null = null;
+
+// ═══ Dashboard ═══
+async function initDashboard() {
+  const res = await fetch('/api/sessoes/aberta', { headers: { Authorization: `Bearer ${token}` } });
+  const data = res.ok ? await res.json() : { session: null };
+  const card = document.getElementById('card-continuar') as HTMLAnchorElement;
+  const personalizar = document.getElementById('card-personalizar')!;
+  if (data.session) {
+    card.style.display = '';
+    personalizar.classList.remove('sm:col-span-2');
+    document.getElementById('card-continuar-sub')!.textContent =
+      `${data.respondidas_count}/${data.total} respondidas — retome de onde parou.`;
+    card.onclick = (e) => { e.preventDefault(); loadSession(data.session.id); };
+  } else {
+    card.style.display = 'none';
+    personalizar.classList.add('sm:col-span-2');
+  }
+
+  const statsRes = await fetch('/api/stats', { headers: { Authorization: `Bearer ${token}` } });
+  if (statsRes.ok) {
+    const { overall } = await statsRes.json();
+    const respondidas = overall?.respondidas || 0;
+    const acertos = overall?.acertos || 0;
+    const pct = respondidas ? Math.round((acertos / respondidas) * 100) : 0;
+    document.getElementById('db-respondidas')!.textContent = String(respondidas);
+    document.getElementById('db-pct')!.textContent = pct + '%';
+    document.getElementById('db-erros')!.textContent = String(respondidas - acertos);
   }
 }
 
-function applyFilters() {
-  filtered = questions.filter((q: any) => {
-    if (activeDisc && q.disc !== activeDisc) return false;
-    const ans = answered[q.id];
-    if (activeStatus === 'unanswered' && ans) return false;
-    if (activeStatus === 'correct'    && (!ans || ans.correct !== 1)) return false;
-    if (activeStatus === 'wrong'      && (!ans || ans.correct === 1)) return false;
-    return true;
+document.getElementById('card-personalizar')!.addEventListener('click', () => showStep('step-builder'));
+
+// ═══ Construtor de sessão ═══
+async function initBuilder() {
+  const [cursosRes, metaRes] = await Promise.all([
+    fetch('/api/cursos', { headers: { Authorization: `Bearer ${token}` } }),
+    fetch('/api/questoes/meta', { headers: { Authorization: `Bearer ${token}` } }),
+  ]);
+  const cursos = cursosRes.ok ? await cursosRes.json() : [];
+  const meta = metaRes.ok ? await metaRes.json() : { disciplinas: [], bancas: [] };
+
+  (document.getElementById('b-curso') as HTMLSelectElement).innerHTML =
+    '<option value="">Todos os cursos</option>' +
+    cursos.map((c: any) => `<option value="${c.id}">${c.titulo}</option>`).join('');
+
+  (document.getElementById('b-disciplina') as HTMLSelectElement).innerHTML =
+    '<option value="">Todas</option>' +
+    meta.disciplinas.map((d: string) => `<option value="${d}">${d}</option>`).join('');
+
+  (document.getElementById('b-banca') as HTMLSelectElement).innerHTML =
+    '<option value="">Banca: Todas</option>' +
+    meta.bancas.map((b: string) => `<option value="${b}">${b}</option>`).join('');
+
+  const thisYear = new Date().getFullYear();
+  let anoOpts = '<option value="">Ano: Todos</option>';
+  for (let y = thisYear; y >= thisYear - 9; y--) anoOpts += `<option value="${y}">${y}</option>`;
+  (document.getElementById('b-ano') as HTMLSelectElement).innerHTML = anoOpts;
+}
+
+document.getElementById('btn-builder-back')!.addEventListener('click', () => showStep('step-dashboard'));
+
+document.getElementById('b-curso')!.addEventListener('change', async (e) => {
+  const cid = (e.target as HTMLSelectElement).value;
+  const wrap = document.getElementById('b-assunto-wrap')!;
+  const list = document.getElementById('b-assunto-list')!;
+  if (!cid) {
+    wrap.classList.add('opacity-40', 'pointer-events-none');
+    list.innerHTML = '';
+    return;
+  }
+  wrap.classList.remove('opacity-40', 'pointer-events-none');
+  list.innerHTML = '<p class="text-xs text-dark/30 p-2">Carregando…</p>';
+  const res = await fetch(`/api/cursos/${cid}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) { list.innerHTML = ''; return; }
+  const curso = await res.json();
+  const modulos = curso.modulos || [];
+  list.innerHTML = modulos.length ? modulos.map((m: any) => `
+    <div class="text-[10px] font-bold uppercase tracking-wide text-dark/35 px-2 pt-2 pb-1">${m.titulo}</div>
+    ${(m.aulas || []).map((a: any) => `
+      <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-dark/5 cursor-pointer text-sm text-dark/70">
+        <input type="checkbox" value="${a.id}" class="accent-dark" />
+        ${a.titulo}
+      </label>`).join('')}
+  `).join('') : '<p class="text-xs text-dark/30 p-2">Nenhuma aula neste curso.</p>';
+});
+
+document.querySelectorAll<HTMLButtonElement>('#b-status .disc-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#b-status .disc-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    statusFiltro = btn.dataset.status || 'todas';
   });
+});
 
-  // Update total label
-  const total      = questions.filter((q: any) => !activeDisc || q.disc === activeDisc).length;
-  const answered_n = filtered.filter((q: any) => answered[q.id]).length;
-  document.getElementById('q-total-label')!.textContent =
-    `${filtered.length} questão(ões) · ${answered_n} respondidas`;
+document.querySelectorAll<HTMLButtonElement>('#b-quantidade .qty-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#b-quantidade .qty-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    quantidadeEscolhida = parseInt(btn.dataset.qtd || '10', 10);
+  });
+});
 
-  updateProgress();
+document.getElementById('btn-encontrar')!.addEventListener('click', async () => {
+  const errEl = document.getElementById('builder-error')!;
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('btn-encontrar') as HTMLButtonElement;
+  btn.disabled = true; btn.textContent = 'Buscando…';
+
+  const aulaIds = Array.from(document.querySelectorAll<HTMLInputElement>('#b-assunto-list input:checked'))
+    .map(el => parseInt(el.value, 10));
+
+  const body: any = {
+    curso_id: (document.getElementById('b-curso') as HTMLSelectElement).value || undefined,
+    aula_ids: aulaIds.length ? aulaIds : undefined,
+    disciplina: (document.getElementById('b-disciplina') as HTMLSelectElement).value || undefined,
+    banca: (document.getElementById('b-banca') as HTMLSelectElement).value || undefined,
+    dificuldade: (document.getElementById('b-dificuldade') as HTMLSelectElement).value || undefined,
+    ano: (document.getElementById('b-ano') as HTMLSelectElement).value || undefined,
+    origem: (document.getElementById('b-origem') as HTMLSelectElement).value || undefined,
+    status_filtro: statusFiltro,
+    quantidade: quantidadeEscolhida,
+  };
+
+  const res = await fetch('/api/sessoes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  btn.disabled = false; btn.textContent = 'Encontrar questões';
+
+  if (!res.ok) {
+    errEl.textContent = 'Erro ao buscar questões. Tente novamente.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  renderConfirmacao(await res.json());
+});
+
+// ═══ Confirmação ═══
+function renderConfirmacao(data: any) {
+  pendingSessionId = data.session_id;
+  document.getElementById('conf-qtd')!.textContent = String(data.quantidade_encontrada);
+  document.getElementById('conf-tempo')!.textContent = String(data.tempo_estimado_min);
+
+  const warnEl = document.getElementById('conf-warning')!;
+  if (data.quantidade_encontrada < data.quantidade_solicitada) {
+    warnEl.textContent = `Encontramos apenas ${data.quantidade_encontrada} de ${data.quantidade_solicitada} questões com esses filtros.`;
+    warnEl.classList.remove('hidden');
+  } else {
+    warnEl.classList.add('hidden');
+  }
+
+  const dist = document.getElementById('conf-distribuicao')!;
+  const entries = Object.entries(data.distribuicao || {});
+  dist.innerHTML = entries.length
+    ? entries.map(([k, v]) => `
+        <div class="flex items-center justify-between">
+          <span>${k}</span>
+          <span class="font-semibold text-dark">${v} questão${(v as number) !== 1 ? 'ões' : ''}</span>
+        </div>`).join('')
+    : '<p class="text-dark/30">—</p>';
+
+  showStep('step-confirmacao');
+}
+
+document.getElementById('btn-conf-voltar')!.addEventListener('click', () => showStep('step-builder'));
+document.getElementById('btn-conf-iniciar')!.addEventListener('click', () => {
+  if (pendingSessionId != null) loadSession(pendingSessionId);
+});
+
+// ═══ Resolução ═══
+async function loadSession(id: number) {
+  const res = await fetch(`/api/sessoes/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) { showStep('step-dashboard'); return; }
+  const data = await res.json();
+  session = data.session;
+  questions = data.questions;
+  answered = data.respostas || {};
+  const firstUnanswered = questions.findIndex((q: any) => !answered[q.id]);
+  current = firstUnanswered === -1 ? 0 : firstUnanswered;
+  showStep('step-resolucao');
   renderQuestion();
 }
 
-function updateProgress() {
-  const counter  = document.getElementById('q-counter')!;
-  const bar      = document.getElementById('q-progress')!;
-  const answered_n = filtered.filter((q: any) => answered[q.id]).length;
+async function loadFavorites() {
+  const res = await fetch('/api/progress/favorites', { headers: { Authorization: `Bearer ${token}` } });
+  if (res.ok) favorites = new Set(await res.json());
+}
 
-  if (!filtered.length) {
+async function criarFlashcard(q: any, correctAnswer: string | null) {
+  const correctAlt = correctAnswer ? q.a.find((a: any) => a.l === correctAnswer) : null;
+  const frente = q.e.length > 300 ? q.e.slice(0, 300) + '…' : q.e;
+  const verso = correctAnswer
+    ? `Resposta: ${correctAnswer}${correctAlt ? ' — ' + correctAlt.t : ''}`
+    : 'Resposta registrada';
+  const res = await fetch('/api/flashcards/auto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ frente, verso, source_id: q.id }),
+  });
+  if (res.ok) flashcardCreated.add(q.id);
+}
+
+function updateProgress() {
+  const counter = document.getElementById('q-counter')!;
+  const bar = document.getElementById('q-progress')!;
+  const prevBtn = document.getElementById('btn-prev') as HTMLButtonElement;
+  const nextBtn = document.getElementById('btn-next') as HTMLButtonElement;
+
+  if (!questions.length) {
     counter.textContent = '0 / 0';
     bar.style.width = '0%';
     return;
   }
-  counter.textContent = `${current + 1} / ${filtered.length}`;
-  bar.style.width     = `${((current + 1) / filtered.length) * 100}%`;
-
-  const statsEl = document.getElementById('q-stats-inline')!;
-  const corr = filtered.slice(0, current + 1).filter((q: any) => answered[q.id]?.correct === 1).length;
-  const ans  = filtered.slice(0, current + 1).filter((q: any) => answered[q.id]).length;
-  if (ans > 0) {
-    statsEl.textContent = `${corr}/${ans} corretas (${Math.round(corr/ans*100)}%)`;
-    statsEl.classList.remove('hidden');
-  }
+  counter.textContent = `${current + 1} / ${questions.length}`;
+  bar.style.width = `${((current + 1) / questions.length) * 100}%`;
+  prevBtn.disabled = current === 0;
+  nextBtn.textContent = current === questions.length - 1 ? 'Finalizar sessão →' : 'Próxima →';
 }
 
-// ── Render question ──
 function renderQuestion() {
   const area = document.getElementById('question-area')!;
   updateProgress();
+  questionStartedAt = performance.now();
+  selectedConfidence = '';
 
-  if (!filtered.length) {
+  if (!questions.length) {
     area.innerHTML = `
       <div class="q-card">
         <div class="empty-state">
@@ -198,21 +535,20 @@ function renderQuestion() {
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
             </svg>
           </div>
-          <p class="font-semibold text-dark mb-1">Nenhuma questão encontrada</p>
-          <p class="text-sm text-dark/50">Tente outro filtro ou disciplina.</p>
+          <p class="font-semibold text-dark mb-1">Nenhuma questão nesta sessão</p>
+          <p class="text-sm text-dark/50">Volte e ajuste os filtros.</p>
         </div>
       </div>`;
     return;
   }
 
-  const q   = filtered[current];
+  const q = questions[current];
   const ans = answered[q.id];
   const isFav = favorites.has(q.id);
 
   const metaParts = [
-    q.ano   ? `Ano: <strong>${q.ano}</strong>`   : '',
+    q.ano   ? `Ano: <strong>${q.ano}</strong>`     : '',
     q.banca ? `Banca: <strong>${q.banca}</strong>` : '',
-    q.cargo ? `Cargo: <strong>${q.cargo}</strong>` : '',
   ].filter(Boolean).join('<span class="mx-2 opacity-30">·</span>');
 
   const altsHtml = q.a.map((alt: any) => {
@@ -249,20 +585,28 @@ function renderQuestion() {
     }
   }
 
+  const confidenceHtml = !ans ? `
+    <div class="confidence-row" id="confidence-row">
+      <button class="confidence-btn" data-conf="chutei">Chutei</button>
+      <button class="confidence-btn" data-conf="duvida">Tenho dúvida</button>
+      <button class="confidence-btn" data-conf="certeza">Tenho certeza</button>
+    </div>` : '';
+
   area.innerHTML = `
     <div class="q-card">
       <div class="q-header">
         <span class="q-num">${current + 1}</span>
         <span class="q-id">${q.id}</span>
-        <span class="q-breadcrumb"><strong>${q.disc}</strong>${q.subj ? ` › ${q.subj}` : ''}</span>
+        <span class="q-breadcrumb"><strong>${q.disc}</strong></span>
       </div>
       ${metaParts ? `<div class="q-meta"><span>${metaParts}</span></div>` : ''}
       <div class="q-body">
         <p class="q-enunciado" id="enunciado" style="font-size:${fontSize}px">${q.e}</p>
       </div>
       <div id="alts" class="px-4 pb-3 flex flex-col gap-2">${altsHtml}</div>
+      ${confidenceHtml}
       ${!ans ? `
-        <div class="px-4 pb-4">
+        <div class="px-4 pb-4 pt-3">
           <button id="btn-responder" class="btn-primary text-sm px-5 py-2.5" disabled>Responder</button>
         </div>` : ''}
       <div class="px-4 pb-4">${resultHtml}</div>
@@ -273,6 +617,13 @@ function renderQuestion() {
           </svg>
           ${isFav ? 'Favoritado' : 'Favoritar'}
         </button>
+        ${ans ? `
+          <button id="btn-flashcard" class="${flashcardCreated.has(q.id) ? 'fav-on' : ''}">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/>
+            </svg>
+            ${flashcardCreated.has(q.id) ? 'Flashcard criado' : 'Criar flashcard'}
+          </button>` : ''}
         <button id="btn-report">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
@@ -282,8 +633,8 @@ function renderQuestion() {
       </div>
     </div>`;
 
-  // Wire alternativas
-  let selectedAlt = '';
+  // Alternativas
+  let selectedAlt = ans ? ans.chosen : '';
   document.querySelectorAll('#alts .alt-opt').forEach(btn => {
     btn.addEventListener('click', () => {
       if ((btn as HTMLButtonElement).disabled) return;
@@ -292,6 +643,16 @@ function renderQuestion() {
       selectedAlt = (btn as HTMLElement).dataset.alt || '';
       const resp = document.getElementById('btn-responder') as HTMLButtonElement | null;
       if (resp) resp.disabled = false;
+      document.getElementById('confidence-row')?.classList.add('show');
+    });
+  });
+
+  // Confiança
+  document.querySelectorAll('.confidence-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.confidence-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedConfidence = (btn as HTMLElement).dataset.conf || '';
     });
   });
 
@@ -301,10 +662,14 @@ function renderQuestion() {
     const resp = document.getElementById('btn-responder') as HTMLButtonElement;
     resp.disabled = true;
     resp.textContent = 'Enviando…';
-    const res  = await fetch('/api/progress/answer', {
+    const timeSpentS = Math.round((performance.now() - questionStartedAt) / 1000);
+    const res = await fetch('/api/progress/answer', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question_id: q.id, chosen: selectedAlt }),
+      body: JSON.stringify({
+        question_id: q.id, chosen: selectedAlt, session_id: session?.id,
+        confidence: selectedConfidence || null, time_spent_s: timeSpentS,
+      }),
     });
     const data = await res.json();
     answered[q.id] = {
@@ -312,23 +677,16 @@ function renderQuestion() {
       correct: data.correct,
       correct_answer: data.correct_answer,
       has_gabarito: data.has_gabarito,
+      confidence: selectedConfidence,
     };
-    renderQuestion();
 
-    // Auto-create flashcard when wrong
     if (data.correct === 0 && data.correct_answer) {
-      const correctAlt = q.a.find((a: any) => a.l === data.correct_answer);
-      const frente = q.e.length > 300 ? q.e.slice(0, 300) + '…' : q.e;
-      const verso  = `Resposta: ${data.correct_answer}${correctAlt ? ' — ' + correctAlt.t : ''}`;
-      fetch('/api/flashcards/auto', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ frente, verso, source_id: q.id }),
-      });
+      await criarFlashcard(q, data.correct_answer);
     }
+    renderQuestion();
   });
 
-  // Favorite
+  // Favoritar
   document.getElementById('btn-fav')?.addEventListener('click', async () => {
     const isFavNow = favorites.has(q.id);
     await fetch(`/api/progress/favorites/${q.id}`, {
@@ -338,9 +696,16 @@ function renderQuestion() {
     if (isFavNow) favorites.delete(q.id); else favorites.add(q.id);
     renderQuestion();
   });
+
+  // Criar flashcard (manual)
+  document.getElementById('btn-flashcard')?.addEventListener('click', async () => {
+    if (flashcardCreated.has(q.id)) return;
+    await criarFlashcard(q, ans.correct_answer);
+    renderQuestion();
+  });
 }
 
-// ── Font size ──
+// Font size
 document.getElementById('btn-fa-up')?.addEventListener('click', () => {
   if (fontSize < 20) { fontSize++; localStorage.setItem('gab_fontsize', String(fontSize)); }
   const el = document.getElementById('enunciado');
@@ -352,24 +717,75 @@ document.getElementById('btn-fa-down')?.addEventListener('click', () => {
   if (el) el.style.fontSize = fontSize + 'px';
 });
 
-// ── Status tabs ──
-document.querySelectorAll('.status-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    activeStatus = (tab as HTMLElement).dataset.status || 'all';
-    document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    current = 0;
-    applyFilters();
-  });
-});
-
-// ── Nav ──
-document.getElementById('btn-next')?.addEventListener('click', () => {
-  if (current < filtered.length - 1) { current++; renderQuestion(); }
+// Navegação
+document.getElementById('btn-next')?.addEventListener('click', async () => {
+  if (current < questions.length - 1) { current++; renderQuestion(); }
+  else { await finalizarSessao(); }
 });
 document.getElementById('btn-prev')?.addEventListener('click', () => {
   if (current > 0) { current--; renderQuestion(); }
 });
 
-init();
+// ═══ Relatório ═══
+async function finalizarSessao() {
+  if (!session) return;
+  const res = await fetch(`/api/sessoes/${session.id}/finalizar`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return;
+  renderRelatorio(await res.json());
+  (window as any).refreshSidebarStats?.();
+}
+
+function renderRelatorio(rel: any) {
+  document.getElementById('rel-respondidas')!.textContent = String(rel.respondidas);
+  document.getElementById('rel-pct')!.textContent = rel.aproveitamento + '%';
+  document.getElementById('rel-acertos')!.textContent = String(rel.acertos);
+  document.getElementById('rel-erros')!.textContent = String(rel.erros);
+
+  const desemp = document.getElementById('rel-desempenho')!;
+  const porAssunto = rel.porAssunto || {};
+  const fonte: Record<string, { total: number; acertos: number }> =
+    Object.keys(porAssunto).length ? porAssunto : (rel.porDisciplina || {});
+  const entries = Object.entries(fonte);
+  desemp.innerHTML = entries.length ? entries.map(([nome, s]) => {
+    const pct = Math.round((s.acertos / s.total) * 100);
+    const color = pct >= 70 ? '#b9ff66' : pct >= 40 ? '#facc15' : '#ef4444';
+    return `
+      <div class="disc-row">
+        <div>
+          <div class="text-sm font-medium text-dark">${nome}</div>
+          <div class="disc-bar-wrap"><div class="disc-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        </div>
+        <span class="text-sm font-semibold text-dark/70 tabular-nums">${pct}%</span>
+      </div>`;
+  }).join('') : '<p class="text-sm text-dark/30">Sem dados suficientes.</p>';
+
+  const recoWrap = document.getElementById('rel-recomendacao')!;
+  if (rel.recomendacoes?.length) {
+    document.getElementById('rel-recomendacao-text')!.innerHTML = rel.recomendacoes.join('<br>');
+    recoWrap.classList.remove('hidden');
+  } else {
+    recoWrap.classList.add('hidden');
+  }
+
+  showStep('step-relatorio');
+}
+
+document.getElementById('btn-rel-inicio')!.addEventListener('click', () => {
+  session = null;
+  showStep('step-dashboard');
+  initDashboard();
+});
+document.getElementById('btn-rel-nova')!.addEventListener('click', () => {
+  session = null;
+  showStep('step-builder');
+});
+
+// ═══ Init ═══
+showStep('step-dashboard');
+initDashboard();
+initBuilder();
+loadFavorites();
 </script>
