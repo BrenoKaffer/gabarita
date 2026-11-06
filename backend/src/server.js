@@ -18,7 +18,9 @@ const STATIC = join(__dir, '..', '..', 'frontend', 'dist');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+// Limite padrão do Express é 100kb — pequeno demais para capas de curso e
+// imagens do editor de aula, que vão embutidas como base64 no corpo JSON.
+app.use(express.json({ limit: '15mb' }));
 
 // API
 app.use('/api/auth', authRouter);
