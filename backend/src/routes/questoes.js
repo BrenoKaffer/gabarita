@@ -63,16 +63,20 @@ router.post('/import', requireAuth, (req, res) => {
 
   const tx = db.transaction((qs) => {
     for (const q of qs) {
+      // Normaliza pra maiúscula: o front sempre manda a letra escolhida em maiúsculo
+      // (toQFormat uppercasa as alternativas pra exibição), então o gabarito armazenado
+      // precisa estar no mesmo case ou a comparação de acerto nunca bate.
+      const gabaritoNorm = String(q.gabarito || '').toUpperCase();
       insertQ.run(
         q.id, q.banca || null, q.ano || null, q.disciplina || null,
         q.subtopico || null, q.dificuldade || 'medio',
-        q.enunciado, JSON.stringify(q.alternativas), q.gabarito, q.explicacao || null,
+        q.enunciado, JSON.stringify(q.alternativas), gabaritoNorm, q.explicacao || null,
         q.aula_id || null, q.origem || 'banco_proprio'
       );
       // Don't overwrite gabarito for static questions (source != 'import')
       const existing = checkGab.get(q.id);
       if (!existing || existing.source === 'import') {
-        insertGab.run(q.id, q.gabarito, q.disciplina || null, 'import');
+        insertGab.run(q.id, gabaritoNorm, q.disciplina || null, 'import');
       }
       imported++;
     }

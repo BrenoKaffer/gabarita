@@ -76,9 +76,18 @@ import MainLayout from '../layouts/MainLayout.astro';
 <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
   <div>
     <h1 class="text-2xl font-semibold">Importar Questões</h1>
-    <p class="text-dark/45 text-sm mt-0.5">Carregue um JSON com questões para adicionar ao banco</p>
+    <p class="text-dark/45 text-sm mt-0.5">Cole o JSON gerado pela IA ou carregue um arquivo</p>
   </div>
-  <a href="/study" class="btn-secondary text-sm py-2 px-4">Ver Banco</a>
+  <a id="btn-voltar" href="/study" class="btn-secondary text-sm py-2 px-4">Ver Banco</a>
+</div>
+
+<!-- Curso / Aula (assunto) do lote -->
+<div class="card mb-6">
+  <label class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-2">Assunto deste lote <span class="text-dark/30 font-normal normal-case">(aplicado a todas as questões coladas abaixo)</span></label>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <select id="imp-curso" class="input text-sm"><option value="">Nenhum curso (sem vínculo)</option></select>
+    <select id="imp-aula" class="input text-sm" disabled><option value="">Nenhuma aula específica</option></select>
+  </div>
 </div>
 
 <!-- Schema hint -->
@@ -87,6 +96,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     Formato do JSON esperado
   </summary>
   <div class="px-4 pb-4 pt-2">
+    <p class="text-xs text-dark/45 mb-2">Assunto (aula), origem e curso são definidos pelo seletor acima — não precisam estar no JSON.</p>
     <pre class="bg-dark text-green text-xs rounded-xl p-4 overflow-x-auto leading-relaxed"><code>{`{
   "versao": "1.0",
   "disciplina": "Raciocínio Lógico",
@@ -104,13 +114,26 @@ import MainLayout from '../layouts/MainLayout.astro';
         "c": "Terceira alternativa",
         "d": "Quarta alternativa"
       },
-      "gabarito": "b",
+      "gabarito": "B",
       "explicacao": "Opcional: explicação da resposta"
     }
   ]
 }`}</code></pre>
   </div>
 </details>
+
+<!-- Colar JSON -->
+<div class="card mb-3">
+  <label for="json-paste" class="text-xs font-semibold text-dark/40 uppercase tracking-wide block mb-2">Colar JSON</label>
+  <textarea id="json-paste" class="input font-mono text-xs resize-none" rows="8" placeholder='Cole aqui o JSON gerado pela IA...'></textarea>
+  <button id="btn-process-paste" class="btn-primary text-sm py-2 px-5 mt-3">Processar JSON colado</button>
+</div>
+
+<div class="flex items-center gap-3 mb-3 text-xs text-dark/30">
+  <div class="flex-1 h-px bg-dark/10"></div>
+  ou
+  <div class="flex-1 h-px bg-dark/10"></div>
+</div>
 
 <!-- Drop zone -->
 <div id="drop-zone" class="drop-zone mb-6">
@@ -197,6 +220,68 @@ import MainLayout from '../layouts/MainLayout.astro';
   const results   = document.getElementById('results')!;
 
   let validQuestoes: any[] = [];
+  let existingIds = new Set<string>();
+
+  // ── Curso / Aula (assunto do lote) ──
+  const cursoIdParam = new URLSearchParams(location.search).get('curso_id');
+  const selCurso = document.getElementById('imp-curso') as HTMLSelectElement;
+  const selAula  = document.getElementById('imp-aula') as HTMLSelectElement;
+
+  async function initCursoAula() {
+    const res = await fetch('/api/cursos', { headers: { Authorization: `Bearer ${token}` } });
+    const cursos = res.ok ? await res.json() : [];
+    selCurso.innerHTML = '<option value="">Nenhum curso (sem vínculo)</option>' +
+      cursos.map((c: any) => `<option value="${c.id}">${c.titulo}</option>`).join('');
+
+    if (cursoIdParam) {
+      selCurso.value = cursoIdParam;
+      (document.getElementById('btn-voltar') as HTMLAnchorElement).href = `/curso?id=${cursoIdParam}`;
+      (document.getElementById('btn-voltar') as HTMLAnchorElement).textContent = 'Voltar ao curso';
+      await loadAulas(cursoIdParam);
+    }
+  }
+
+  async function loadAulas(cid: string) {
+    if (!cid) {
+      selAula.innerHTML = '<option value="">Nenhuma aula específica</option>';
+      selAula.disabled = true;
+      return;
+    }
+    selAula.disabled = false;
+    selAula.innerHTML = '<option value="">Carregando…</option>';
+    const res = await fetch(`/api/cursos/${cid}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) { selAula.innerHTML = '<option value="">Nenhuma aula específica</option>'; return; }
+    const curso = await res.json();
+    const modulos = curso.modulos || [];
+    const opts = modulos.flatMap((m: any) =>
+      (m.aulas || []).map((a: any) => `<option value="${a.id}">${m.titulo} › ${a.titulo}</option>`)
+    );
+    selAula.innerHTML = '<option value="">Nenhuma aula específica</option>' + opts.join('');
+  }
+
+  selCurso.addEventListener('change', () => loadAulas(selCurso.value));
+
+  async function loadExistingIds() {
+    const res = await fetch('/api/questoes', { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const qs = await res.json();
+    existingIds = new Set(qs.map((q: any) => q.id));
+  }
+
+  initCursoAula();
+  loadExistingIds();
+
+  // ── Colar JSON ──
+  document.getElementById('btn-process-paste')!.addEventListener('click', () => {
+    const raw = (document.getElementById('json-paste') as HTMLTextAreaElement).value.trim();
+    if (!raw) return;
+    try {
+      const json = JSON.parse(raw);
+      validateAndRender(json, 'JSON colado');
+    } catch {
+      alert('JSON inválido. Verifique a sintaxe.');
+    }
+  });
 
   // ── Drop zone interactions ──
   dzBtn.addEventListener('click', () => fileInput.click());
@@ -320,6 +405,7 @@ import MainLayout from '../layouts/MainLayout.astro';
         validQuestoes.length > 20 ? `Mostrando 20 de ${validCount}` : `${validCount} questões`;
       document.getElementById('preview-body')!.innerHTML = shown.map(q => {
         const dif: Record<string, string> = { facil: 'Fácil', medio: 'Médio', dificil: 'Difícil' };
+        const isDup = existingIds.has(q.id);
         return `<tr>
           <td class="font-mono text-xs text-dark/60">${q.id}</td>
           <td>${q.disciplina || '<span class="text-dark/30">—</span>'}</td>
@@ -327,7 +413,7 @@ import MainLayout from '../layouts/MainLayout.astro';
           <td>${dif[q.dificuldade] || q.dificuldade || '—'}</td>
           <td class="max-w-xs" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">${q.enunciado.slice(0, 90)}${q.enunciado.length > 90 ? '…' : ''}</td>
           <td class="font-bold uppercase text-center">${q.gabarito}</td>
-          <td><span class="badge-ok">✓ OK</span></td>
+          <td>${isDup ? '<span class="badge-dup">Já existe (atualiza)</span>' : '<span class="badge-ok">✓ OK</span>'}</td>
         </tr>`;
       }).join('');
     } else {
@@ -353,10 +439,13 @@ import MainLayout from '../layouts/MainLayout.astro';
     overlay.classList.add('show');
     document.getElementById('prog-label')!.textContent = `Enviando ${validQuestoes.length} ${validQuestoes.length !== 1 ? 'questões' : 'questão'}…`;
 
+    const aulaId = selAula.value ? parseInt(selAula.value, 10) : null;
+    const payload = validQuestoes.map(q => ({ ...q, aula_id: aulaId, origem: 'ia' }));
+
     const res = await fetch('/api/questoes/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ questoes: validQuestoes }),
+      body: JSON.stringify({ questoes: payload }),
     });
 
     overlay.classList.remove('show');
@@ -372,9 +461,9 @@ import MainLayout from '../layouts/MainLayout.astro';
             </svg>
           </div>
           <h2 class="text-xl font-semibold mb-1">${imported} ${imported !== 1 ? 'questões importadas' : 'questão importada'}!</h2>
-          <p class="text-dark/45 text-sm mb-6">Agora disponíveis na revisão e simulado.</p>
+          <p class="text-dark/45 text-sm mb-6">Já disponíveis em Questões, filtráveis pelo assunto escolhido.</p>
           <div class="flex gap-3">
-            <a href="/study" class="btn-primary">Ir para Revisão</a>
+            <a href="${cursoIdParam ? `/curso?id=${cursoIdParam}` : '/study'}" class="btn-primary">${cursoIdParam ? 'Voltar ao curso' : 'Ir para Questões'}</a>
             <button onclick="location.reload()" class="btn-secondary">Importar mais</button>
           </div>
         </div>`;
