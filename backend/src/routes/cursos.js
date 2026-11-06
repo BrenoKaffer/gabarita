@@ -44,9 +44,15 @@ router.get('/aulas/:aid', (req, res) => {
 });
 
 router.put('/aulas/:aid', (req, res) => {
-  const { titulo, conteudo_md, duracao_min } = req.body;
+  // Update parcial: campos omitidos mantêm o valor atual (ex: renomear sem
+  // reenviar conteudo_md não pode apagar o conteúdo salvo da aula).
+  const existing = db.prepare('SELECT titulo, conteudo_md, duracao_min FROM aulas WHERE id=?').get(req.params.aid);
+  if (!existing) return res.status(404).json({ error: 'Aula não encontrada' });
+  const titulo       = req.body.titulo !== undefined ? req.body.titulo : existing.titulo;
+  const conteudo_md  = req.body.conteudo_md !== undefined ? req.body.conteudo_md : existing.conteudo_md;
+  const duracao_min  = req.body.duracao_min !== undefined ? req.body.duracao_min : existing.duracao_min;
   db.prepare('UPDATE aulas SET titulo=?, conteudo_md=?, duracao_min=? WHERE id=?')
-    .run(titulo, conteudo_md ?? '', duracao_min ?? 0, req.params.aid);
+    .run(titulo, conteudo_md, duracao_min, req.params.aid);
   res.json({ ok: true });
 });
 

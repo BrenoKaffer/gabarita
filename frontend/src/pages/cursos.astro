@@ -82,6 +82,44 @@ import MainLayout from '../layouts/MainLayout.astro';
   /* Loading spinner */
   .spinner { width: 32px; height: 32px; border: 3px solid rgba(25,26,35,0.1); border-top-color: #191a23; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Ações sutis do card (editar/excluir) */
+  .card-actions {
+    position: absolute; top: 0.5rem; right: 0.5rem; z-index: 2;
+    display: flex; gap: 0.3rem; opacity: 0; transition: opacity 0.15s;
+  }
+  .course-card:hover .card-actions { opacity: 1; }
+  .card-act-btn {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(17,17,17,0.55); backdrop-filter: blur(4px);
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.9); transition: all 0.15s; flex-shrink: 0;
+  }
+  .card-act-btn:hover { background: rgba(17,17,17,0.88); transform: scale(1.06); }
+  .card-act-btn.danger:hover { background: #ef4444; }
+
+  /* Modal de confirmação (substitui confirm() nativo) */
+  .dlg-overlay {
+    position: fixed; inset: 0; background: rgba(25,26,35,0.5);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200; padding: 1rem;
+  }
+  .dlg-overlay.show { display: flex; }
+  .dlg-box {
+    background: white; border-radius: 20px; padding: 1.5rem;
+    width: 100%; max-width: 380px;
+    border: 1.5px solid #191a23; box-shadow: 0px 8px 0px #191a23;
+  }
+  .dlg-title { font-size: 1.0625rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .dlg-msg { font-size: 0.875rem; color: rgba(25,26,35,0.55); margin: 0.25rem 0 0; }
+  .dlg-actions { display: flex; gap: 0.5rem; margin-top: 1.25rem; }
+  .dlg-actions .btn-danger {
+    flex: 1; font-size: 0.875rem;
+    background: #ef4444; color: white; border: 1.5px solid #dc2626;
+    border-radius: 8px; padding: 0.6rem 1.25rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .dlg-actions .btn-danger:hover { background: #dc2626; transform: scale(1.03); }
 </style>
 
 <!-- Header -->
@@ -118,8 +156,8 @@ import MainLayout from '../layouts/MainLayout.astro';
 
     <!-- STEP: modo -->
     <div id="step-modo">
-      <h2 class="text-lg font-semibold mb-4">Novo Curso</h2>
-      <div class="modo-tabs">
+      <h2 id="modal-title" class="text-lg font-semibold mb-4">Novo Curso</h2>
+      <div class="modo-tabs" id="modo-tabs">
         <button class="modo-tab active" data-m="manual">✏️ Manual</button>
         <button class="modo-tab" data-m="pdf">📄 PDF do Programa</button>
         <button class="modo-tab" data-m="json">{ } JSON</button>
@@ -245,6 +283,18 @@ import MainLayout from '../layouts/MainLayout.astro';
   </div>
 </div>
 
+<!-- Modal de confirmação (substitui confirm() nativo) -->
+<div id="dlg-overlay" class="dlg-overlay">
+  <div class="dlg-box">
+    <h3 id="dlg-title" class="dlg-title"></h3>
+    <p id="dlg-msg" class="dlg-msg"></p>
+    <div class="dlg-actions">
+      <button id="dlg-cancel" class="btn-secondary flex-1 text-sm">Cancelar</button>
+      <button id="dlg-ok" class="btn-danger flex-1 text-sm">Excluir</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const token = localStorage.getItem('gab_token');
 
@@ -252,10 +302,13 @@ import MainLayout from '../layouts/MainLayout.astro';
     return t.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
   }
 
+  let cursosCache: any[] = [];
+
   async function load() {
     const res = await fetch('/api/cursos', { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) return;
     const cursos = await res.json();
+    cursosCache = cursos;
     const grid  = document.getElementById('grid')!;
     const empty = document.getElementById('empty-state')!;
     if (!cursos.length) { empty.style.display = 'flex'; return; }
@@ -272,6 +325,18 @@ import MainLayout from '../layouts/MainLayout.astro';
         <div class="card-cover" style="${coverBg}">
           ${coverImg}
           <div class="card-cover-overlay"></div>
+          <div class="card-actions">
+            <button class="card-act-btn" onclick="event.preventDefault(); event.stopPropagation(); editCurso(${c.id})" title="Editar curso">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/>
+              </svg>
+            </button>
+            <button class="card-act-btn danger" onclick="event.preventDefault(); event.stopPropagation(); delCurso(${c.id})" title="Excluir curso">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
           <div class="card-cover-body">
             <div class="card-cover-title">${c.titulo}</div>
             <div class="card-cover-meta">${meta}</div>
@@ -281,12 +346,52 @@ import MainLayout from '../layouts/MainLayout.astro';
     }).join('');
   }
 
+  // ── Modal de confirmação (substitui confirm() nativo) ──
+  const dlgOverlay = document.getElementById('dlg-overlay') as HTMLElement;
+  const dlgTitle   = document.getElementById('dlg-title') as HTMLElement;
+  const dlgMsg     = document.getElementById('dlg-msg') as HTMLElement;
+  const dlgCancel  = document.getElementById('dlg-cancel') as HTMLButtonElement;
+  const dlgOk      = document.getElementById('dlg-ok') as HTMLButtonElement;
+
+  function askConfirm(title: string, msg: string): Promise<boolean> {
+    return new Promise(resolve => {
+      dlgTitle.textContent = title;
+      dlgMsg.textContent = msg;
+      dlgOverlay.classList.add('show');
+      const cleanup = () => {
+        dlgOverlay.classList.remove('show');
+        dlgCancel.removeEventListener('click', onCancel);
+        dlgOk.removeEventListener('click', onOk);
+      };
+      const onCancel = () => { cleanup(); resolve(false); };
+      const onOk = () => { cleanup(); resolve(true); };
+      dlgCancel.addEventListener('click', onCancel);
+      dlgOk.addEventListener('click', onOk);
+    });
+  }
+
+  async function delCurso(cid: number) {
+    const ok = await askConfirm('Excluir curso?', 'O curso, seus módulos e aulas serão apagados permanentemente.');
+    if (!ok) return;
+    await fetch(`/api/cursos/${cid}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    load();
+  }
+
+  function editCurso(cid: number) {
+    const c = cursosCache.find((x: any) => x.id === cid);
+    if (c) openEditModal(c);
+  }
+
+  (window as any).delCurso = delCurso;
+  (window as any).editCurso = editCurso;
+
   // ── Estado do modal ──
   let cor = '#6366f1';
   let capaBase64: string | null = null;
   let modo = 'manual';
   let pdfFile: File | null = null;
   let estruturaGerada: any = null;
+  let editingId: number | null = null;
 
   const overlay   = document.getElementById('overlay')!;
   const modalBox  = document.getElementById('modal-box')!;
@@ -301,7 +406,9 @@ import MainLayout from '../layouts/MainLayout.astro';
 
   function closeModal() {
     overlay.classList.remove('show');
-    pdfFile = null; estruturaGerada = null; capaBase64 = null;
+    pdfFile = null; estruturaGerada = null; capaBase64 = null; editingId = null;
+    cor = '#6366f1';
+    document.querySelectorAll<HTMLElement>('.color-dot').forEach((el, i) => el.classList.toggle('sel', i === 0));
     (document.getElementById('inp-titulo') as HTMLInputElement).value = '';
     (document.getElementById('inp-desc') as HTMLTextAreaElement).value = '';
     (document.getElementById('inp-json') as HTMLTextAreaElement).value = '';
@@ -311,11 +418,38 @@ import MainLayout from '../layouts/MainLayout.astro';
     (document.getElementById('upload-label') as HTMLElement).textContent = 'Clique ou arraste uma imagem';
     (document.getElementById('pdf-error') as HTMLElement).classList.add('hidden');
     (document.getElementById('json-error') as HTMLElement).classList.add('hidden');
+    (document.getElementById('modal-title') as HTMLElement).textContent = 'Novo Curso';
+    (document.getElementById('btn-criar-manual') as HTMLButtonElement).textContent = 'Criar';
+    document.getElementById('modo-tabs')!.classList.remove('hidden');
+    showStep('step-modo');
+  }
+
+  function openEditModal(c: any) {
+    editingId = c.id;
+    cor = c.cor || '#6366f1';
+    capaBase64 = c.capa_base64 || null;
+    (document.getElementById('inp-titulo') as HTMLInputElement).value = c.titulo || '';
+    (document.getElementById('inp-desc') as HTMLTextAreaElement).value = c.descricao || '';
+    document.querySelectorAll<HTMLElement>('.color-dot').forEach(el => el.classList.toggle('sel', el.dataset.c === cor));
+    if (capaBase64) {
+      (document.getElementById('capa-img') as HTMLImageElement).src = capaBase64;
+      (document.getElementById('capa-preview') as HTMLElement).style.display = 'block';
+      (document.getElementById('upload-label') as HTMLElement).textContent = 'Capa atual (clique para trocar)';
+    }
+    modo = 'manual';
+    document.querySelectorAll<HTMLElement>('.modo-tab').forEach(t => t.classList.toggle('active', t.dataset.m === 'manual'));
+    ['form-manual', 'form-pdf', 'form-json'].forEach(f => (document.getElementById(f) as HTMLElement).classList.add('hidden'));
+    (document.getElementById('form-manual') as HTMLElement).classList.remove('hidden');
+    document.getElementById('modo-tabs')!.classList.add('hidden');
+    (document.getElementById('modal-title') as HTMLElement).textContent = 'Editar Curso';
+    (document.getElementById('btn-criar-manual') as HTMLButtonElement).textContent = 'Salvar';
+    overlay.classList.add('show');
     showStep('step-modo');
   }
 
   // Abrir modal
   document.getElementById('btn-novo')!.addEventListener('click', () => {
+    editingId = null;
     overlay.classList.add('show');
     showStep('step-modo');
   });
@@ -525,20 +659,25 @@ import MainLayout from '../layouts/MainLayout.astro';
   (window as any).delMod  = (mi: number) => document.getElementById(`pmod-${mi}`)?.remove();
   (window as any).delAula = (mi: number, ai: number) => document.getElementById(`paula-${mi}-${ai}`)?.remove();
 
-  // ── Criar manual ──
+  // ── Criar / salvar manual ──
   document.getElementById('btn-criar-manual')!.addEventListener('click', async () => {
     const titulo   = (document.getElementById('inp-titulo') as HTMLInputElement).value.trim();
     const descricao = (document.getElementById('inp-desc') as HTMLTextAreaElement).value.trim();
     if (!titulo) { (document.getElementById('inp-titulo') as HTMLInputElement).focus(); return; }
     const btn = document.getElementById('btn-criar-manual') as HTMLButtonElement;
-    btn.textContent = 'Criando…'; btn.disabled = true;
-    const res = await fetch('/api/cursos', {
-      method: 'POST',
+    const editing = editingId;
+    btn.textContent = editing ? 'Salvando…' : 'Criando…'; btn.disabled = true;
+    const res = await fetch(editing ? `/api/cursos/${editing}` : '/api/cursos', {
+      method: editing ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ titulo, descricao, cor, capa_base64: capaBase64 }),
     });
-    btn.textContent = 'Criar'; btn.disabled = false;
-    if (res.ok) { const { id } = await res.json(); location.href = `/curso?id=${id}`; }
+    btn.disabled = false;
+    btn.textContent = editing ? 'Salvar' : 'Criar';
+    if (res.ok) {
+      if (editing) { closeModal(); load(); }
+      else { const { id } = await res.json(); location.href = `/curso?id=${id}`; }
+    }
   });
 
   // ── Criar do preview ──

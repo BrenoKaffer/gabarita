@@ -72,6 +72,23 @@ import MainLayout from '../layouts/MainLayout.astro';
   .dlg-msg { font-size: 0.875rem; color: rgba(25,26,35,0.55); margin: 0.25rem 0 0; }
   .dlg-box input.input { margin-top: 0.875rem; }
   .dlg-actions { display: flex; gap: 0.5rem; margin-top: 1.25rem; }
+  .dlg-actions .btn-danger {
+    flex: 1; font-size: 0.875rem;
+    background: #ef4444; color: white; border: 1.5px solid #dc2626;
+    border-radius: 8px; padding: 0.6rem 1.25rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .dlg-actions .btn-danger:hover { background: #dc2626; transform: scale(1.03); }
+
+  /* Botões sutis de editar/excluir (aparecem mais claros no hover da linha) */
+  .row-actions { display: flex; align-items: center; gap: 0.125rem; opacity: 0.45; transition: opacity 0.15s; }
+  .mod-header:hover .row-actions, .aula-row:hover .row-actions { opacity: 1; }
+  .row-act-btn {
+    padding: 0.3rem; border-radius: 6px; background: none; border: none; cursor: pointer;
+    color: rgba(25,26,35,0.5); transition: all 0.1s; flex-shrink: 0;
+  }
+  .row-act-btn:hover { color: #191a23; background: rgba(25,26,35,0.08); }
+  .row-act-btn.danger:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
 </style>
 
 <!-- Back -->
@@ -124,16 +141,18 @@ import MainLayout from '../layouts/MainLayout.astro';
   const dlgCancel  = document.getElementById('dlg-cancel') as HTMLButtonElement;
   const dlgOk      = document.getElementById('dlg-ok') as HTMLButtonElement;
 
-  function askText(title: string, placeholder = ''): Promise<string | null> {
+  function askText(title: string, placeholder = '', defaultValue = ''): Promise<string | null> {
     return new Promise(resolve => {
       dlgTitle.textContent = title;
       dlgMsg.classList.add('hidden');
       dlgInput.classList.remove('hidden');
-      dlgInput.value = '';
+      dlgInput.value = defaultValue;
       dlgInput.placeholder = placeholder;
       dlgOk.textContent = 'OK';
+      dlgOk.classList.remove('btn-danger');
+      dlgOk.classList.add('btn-primary');
       dlgOverlay.classList.add('show');
-      setTimeout(() => dlgInput.focus(), 50);
+      setTimeout(() => { dlgInput.focus(); dlgInput.select(); }, 50);
 
       const cleanup = () => {
         dlgOverlay.classList.remove('show');
@@ -157,7 +176,9 @@ import MainLayout from '../layouts/MainLayout.astro';
       dlgMsg.textContent = msg;
       dlgMsg.classList.remove('hidden');
       dlgInput.classList.add('hidden');
-      dlgOk.textContent = 'Remover';
+      dlgOk.textContent = 'Excluir';
+      dlgOk.classList.remove('btn-primary');
+      dlgOk.classList.add('btn-danger');
       dlgOverlay.classList.add('show');
 
       const cleanup = () => {
@@ -211,12 +232,18 @@ import MainLayout from '../layouts/MainLayout.astro';
           </svg>
           <span class="font-medium text-sm flex-1 truncate">${m.titulo}</span>
           <span class="text-xs text-dark/30 shrink-0">${m.aulas.length}a</span>
-          <button onclick="event.stopPropagation(); delMod(${m.id})"
-            class="ml-2 p-1 rounded text-dark/20 hover:text-red-400 hover:bg-red-50 transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
+          <div class="row-actions">
+            <button onclick="event.stopPropagation(); renameMod(${m.id})" class="row-act-btn" title="Renomear módulo">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/>
+              </svg>
+            </button>
+            <button onclick="event.stopPropagation(); delMod(${m.id})" class="row-act-btn danger" title="Excluir módulo">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
         </div>
         <div id="aulas-${m.id}">
           ${m.aulas.map((a: any) => `
@@ -226,6 +253,18 @@ import MainLayout from '../layouts/MainLayout.astro';
               </div>
               <span class="text-sm flex-1">${a.titulo}</span>
               ${a.duracao_min ? `<span class="text-xs text-dark/30">${a.duracao_min}min</span>` : ''}
+              <div class="row-actions">
+                <button onclick="event.preventDefault(); event.stopPropagation(); renameAula(${a.id})" class="row-act-btn" title="Renomear aula">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/>
+                  </svg>
+                </button>
+                <button onclick="event.preventDefault(); event.stopPropagation(); delAula(${a.id})" class="row-act-btn danger" title="Excluir aula">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
               <svg class="w-4 h-4 text-dark/20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
               </svg>
@@ -271,6 +310,41 @@ import MainLayout from '../layouts/MainLayout.astro';
     load();
   }
 
+  async function renameMod(mid: number) {
+    const mod = curso.modulos.find((m: any) => m.id === mid);
+    const titulo = await askText('Renomear módulo', 'Título do módulo', mod?.titulo || '');
+    if (!titulo) return;
+    await fetch(`/api/cursos/modulos/${mid}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ titulo: titulo.trim() }),
+    });
+    load();
+  }
+
+  async function renameAula(aid: number) {
+    let atual = '';
+    for (const m of curso.modulos) {
+      const a = m.aulas.find((x: any) => x.id === aid);
+      if (a) { atual = a.titulo; break; }
+    }
+    const titulo = await askText('Renomear aula', 'Título da aula', atual);
+    if (!titulo) return;
+    await fetch(`/api/cursos/aulas/${aid}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ titulo: titulo.trim() }),
+    });
+    load();
+  }
+
+  async function delAula(aid: number) {
+    const ok = await askConfirm('Excluir aula?', 'Esta aula e todo o seu conteúdo serão apagados permanentemente.');
+    if (!ok) return;
+    await fetch(`/api/cursos/aulas/${aid}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    load();
+  }
+
   document.getElementById('btn-add-mod')!.addEventListener('click', async () => {
     const titulo = await askText('Título do módulo', 'Ex: Módulo 1 — Introdução');
     if (!titulo) return;
@@ -285,6 +359,9 @@ import MainLayout from '../layouts/MainLayout.astro';
   (window as any).toggleMod = toggleMod;
   (window as any).addAula = addAula;
   (window as any).delMod = delMod;
+  (window as any).renameMod = renameMod;
+  (window as any).renameAula = renameAula;
+  (window as any).delAula = delAula;
 
   load();
 </script>
