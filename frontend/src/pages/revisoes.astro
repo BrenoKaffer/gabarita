@@ -2,11 +2,97 @@
 import MainLayout from '../layouts/MainLayout.astro';
 ---
 <MainLayout title="Revisões">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:12px;text-align:center;color:#9ca3af">
-    <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-    </svg>
-    <h1 style="font-size:1.5rem;font-weight:700;color:#374151">Revisões</h1>
-    <p style="font-size:0.9rem">Em breve — revisões programadas e pendentes.</p>
-  </div>
+
+<div class="mb-5">
+  <h1 class="text-xl font-semibold">Revisões <span class="greenhead">sugeridas</span></h1>
+  <p class="text-sm text-dark/50 mt-0.5">Assuntos com pendências, do mais fraco pro mais forte. Escolha um e revise agora.</p>
+</div>
+
+<div id="revisoes-list" class="flex flex-col gap-4"></div>
+
 </MainLayout>
+
+<script>
+const token = localStorage.getItem('gab_token');
+let list: any[] = [];
+
+async function init() {
+  const res = await fetch('/api/dominio', { headers: { Authorization: `Bearer ${token}` } });
+  list = res.ok ? await res.json() : [];
+  render();
+}
+
+function render() {
+  const el = document.getElementById('revisoes-list')!;
+
+  if (!list.length) {
+    el.innerHTML = `
+      <div class="q-card">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg class="w-7 h-7 text-dark/30" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <p class="font-semibold text-dark mb-1">Nada pra revisar ainda</p>
+          <p class="text-sm text-dark/50">Resolva algumas questões em Questões pra começar a ver suas revisões aqui.</p>
+        </div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="q-card">` + list.map((item, i) => {
+    const color = item.pct >= 70 ? '#b9ff66' : item.pct >= 40 ? '#facc15' : '#ef4444';
+    const border = i > 0 ? 'border-top:1px solid rgba(25,26,35,0.07);' : '';
+    const pendentesBadge = item.pendentes > 0
+      ? `<span class="pendentes-badge">${item.pendentes} pendente${item.pendentes !== 1 ? 's' : ''}</span>`
+      : '';
+    return `
+      <div style="padding:16px 20px;${border}" class="flex items-center justify-between gap-4 flex-wrap">
+        <div class="flex-1 min-w-[180px]">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm font-medium text-dark">${item.chave}</span>
+            ${pendentesBadge}
+          </div>
+          <div class="text-xs text-dark/40 mt-0.5">${item.total} respondida${item.total !== 1 ? 's' : ''} · ${item.pct}% de domínio</div>
+          <div class="disc-bar-wrap" style="max-width:220px"><div class="disc-bar-fill" style="width:${item.pct}%;background:${color}"></div></div>
+        </div>
+        <button class="btn-primary text-sm px-4 py-2 shrink-0" data-i="${i}" ${item.pendentes === 0 ? 'disabled style="opacity:0.35;cursor:not-allowed"' : ''}>
+          Revisar agora
+        </button>
+      </div>`;
+  }).join('') + `</div>`;
+
+  el.querySelectorAll<HTMLButtonElement>('button[data-i]').forEach(btn => {
+    btn.addEventListener('click', () => revisar(list[parseInt(btn.dataset.i!, 10)], btn));
+  });
+}
+
+async function revisar(item: any, btn: HTMLButtonElement) {
+  btn.disabled = true;
+  btn.textContent = 'Criando sessão…';
+
+  const body: any = {
+    status_filtro: 'fraco',
+    quantidade: Math.min(item.pendentes, 20) || 10,
+  };
+  if (item.aula_id) body.aula_ids = [item.aula_id];
+  else body.disciplina = item.chave;
+
+  const res = await fetch('/api/sessoes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    btn.disabled = false;
+    btn.textContent = 'Revisar agora';
+    return;
+  }
+  const { session_id } = await res.json();
+  location.href = `/study?resume=${session_id}`;
+}
+
+init();
+</script>

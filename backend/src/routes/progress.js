@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db, { updateStreak } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
+import { resolveQuestionObj, resolveQuestionMeta } from '../lib/questionSource.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -16,10 +17,12 @@ router.post('/answer', (req, res) => {
 
   if (correct !== null) {
     db.prepare(`
-      INSERT INTO progress (user_id, question_id, chosen, correct)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(user_id, question_id) DO UPDATE SET chosen=excluded.chosen, correct=excluded.correct, answered_at=datetime('now')
-    `).run(req.user.id, question_id, chosen, correct);
+      INSERT INTO progress (user_id, question_id, chosen, correct, confidence)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(user_id, question_id) DO UPDATE SET
+        chosen=excluded.chosen, correct=excluded.correct,
+        confidence=excluded.confidence, answered_at=datetime('now')
+    `).run(req.user.id, question_id, chosen, correct, confidence || null);
   }
 
   // Tentativa: histórico completo, nunca sobrescrito (independe de haver gabarito)
@@ -45,16 +48,34 @@ router.get('/answered', (req, res) => {
   res.json(rows);
 });
 
-// Questões erradas para revisão
+// Questões erradas + lacunas (acertou chutando) para revisão
 router.get('/errors', (req, res) => {
   const rows = db.prepare(`
-    SELECT p.question_id, p.chosen, g.correct AS correct_answer
-    FROM progress p
-    LEFT JOIN gabarito g ON g.question_id = p.question_id
-    WHERE p.user_id = ? AND p.correct = 0
-    ORDER BY p.answered_at DESC
+    SELECT question_id, chosen, correct, confidence, answered_at
+    FROM progress WHERE user_id = ? AND correct IS NOT NULL
+    ORDER BY answered_at DESC
   `).all(req.user.id);
-  res.json(rows);
+
+  const build = (r) => {
+    const q = resolveQuestionObj(r.question_id);
+    if (!q) return null; // questão apagada/órfã — não quebra a lista
+    const meta = resolveQuestionMeta(r.question_id);
+    const gab = db.prepare('SELECT correct FROM gabarito WHERE question_id = ?').get(r.question_id);
+    return {
+      question_id: r.question_id,
+      chosen: r.chosen,
+      correct_answer: gab?.correct ?? null,
+      disc: meta.disc,
+      assunto: meta.assunto,
+      e: q.e,
+      a: q.a,
+      answered_at: r.answered_at,
+    };
+  };
+
+  const erros = rows.filter(r => r.correct === 0).map(build).filter(Boolean);
+  const chutei_acertos = rows.filter(r => r.correct === 1 && r.confidence === 'chutei').map(build).filter(Boolean);
+  res.json({ erros, chutei_acertos });
 });
 
 // Favoritos

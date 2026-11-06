@@ -220,5 +220,24 @@
 .confidence-btn:hover { border-color: #191a23; color: #191a23; }
 .confidence-btn.selected { background: #191a23; border-color: #191a23; color: #b9ff66; }
 
+/* ── Estado vazio — global (usado via innerHTML dinâmico em várias páginas) ── */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 64px 32px; text-align: center;
+}
+.empty-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: rgba(185,255,102,0.15); display: flex; align-items: center;
+  justify-content: center; margin-bottom: 16px;
+}
+
+/* ── Pílula de pendências (Revisões) — global (usado via innerHTML dinâmico) ── */
+.pendentes-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 600;
+  background: rgba(239,68,68,0.1); color: #dc2626;
+  white-space: nowrap;
+}
+
 /* ── Botão "Responder" desabilitado (tela de resolução) — global (usado via innerHTML dinâmico) ── */
 #btn-responder:disabled { opacity: 0.4; cursor: not-allowed; }

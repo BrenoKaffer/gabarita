@@ -1,47 +1,13 @@
 import { Router } from 'express';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import db from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { toQFormat } from './questoes.js';
+import { getStaticList, resolveQuestionMeta, resolveQuestionObj } from '../lib/questionSource.js';
 
 const router = Router();
 router.use(requireAuth);
 
-// ── Banco estático (questions.json), carregado uma vez em memória ──
-const __dir = dirname(fileURLToPath(import.meta.url));
-const STATIC_QUESTIONS_PATH = join(__dir, '..', '..', '..', 'frontend', 'dist', 'questions.json');
-
-let staticList = [];
-let staticById = new Map();
-try {
-  staticList = JSON.parse(readFileSync(STATIC_QUESTIONS_PATH, 'utf-8'));
-  staticById = new Map(staticList.map(q => [q.id, q]));
-} catch {
-  // frontend/dist ainda não foi buildado — segue só com o banco do DB
-}
-
-// ── Helpers ──
-
-// Resolve disciplina + assunto (título da aula) de uma questão, DB ou estática
-function resolveQuestionMeta(qid) {
-  const row = db.prepare(`
-    SELECT q.disciplina AS disc, a.titulo AS assunto
-    FROM questoes q
-    LEFT JOIN aulas a ON a.id = q.aula_id
-    WHERE q.id = ?
-  `).get(qid);
-  if (row) return { disc: row.disc || null, assunto: row.assunto || null };
-  const s = staticById.get(qid);
-  return { disc: s?.disc || null, assunto: null };
-}
-
-function resolveQuestionObj(qid) {
-  const row = db.prepare('SELECT * FROM questoes WHERE id = ?').get(qid);
-  if (row) return toQFormat(row);
-  return staticById.get(qid) || null;
-}
+const staticList = getStaticList();
 
 // Monta o relatório de uma sessão a partir das tentativas registradas
 function buildRelatorio(sessionId, userId) {
@@ -159,15 +125,16 @@ router.post('/', (req, res) => {
   staticQs = staticQs.filter(q => !dbIds.has(q.id));
   let combined = [...dbQs, ...staticQs];
 
-  // ── Status (já respondida, acertei, errei...) ──
+  // ── Status (já respondida, acertei, errei, fraco...) ──
   if (status_filtro && status_filtro !== 'todas') {
-    const answered = db.prepare('SELECT question_id, correct FROM progress WHERE user_id = ?').all(req.user.id);
-    const byId = new Map(answered.map(a => [a.question_id, a.correct]));
+    const answered = db.prepare('SELECT question_id, correct, confidence FROM progress WHERE user_id = ?').all(req.user.id);
+    const byId = new Map(answered.map(a => [a.question_id, a]));
     combined = combined.filter(q => {
       const ans = byId.get(q.id);
       if (status_filtro === 'nao_respondidas') return ans === undefined;
-      if (status_filtro === 'acertei')         return ans === 1;
-      if (status_filtro === 'errei')           return ans === 0;
+      if (status_filtro === 'acertei')         return ans?.correct === 1;
+      if (status_filtro === 'errei')           return ans?.correct === 0;
+      if (status_filtro === 'fraco')           return !!ans && (ans.correct === 0 || (ans.correct === 1 && ans.confidence === 'chutei'));
       return true;
     });
   }

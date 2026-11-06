@@ -12,17 +12,15 @@ import MainLayout from '../layouts/MainLayout.astro';
   .disc-chip:hover { border-color: #191a23; color: #191a23; }
   .disc-chip.active { background: #191a23; border-color: #191a23; color: white; }
 
-  .alt-label { font-size: 0.7rem; font-weight: 700; margin-left: auto; padding-left: 8px; white-space: nowrap; }
+  .tab-btn {
+    padding: 8px 16px; font-size: 0.8125rem; font-weight: 600;
+    border-radius: 10px; border: 1.5px solid transparent; background: none;
+    color: rgba(25,26,35,0.45); cursor: pointer; transition: all 0.15s;
+  }
+  .tab-btn:hover { color: #191a23; }
+  .tab-btn.active { background: #191a23; color: white; }
 
-  .empty-state {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; padding: 64px 32px; text-align: center;
-  }
-  .empty-icon {
-    width: 64px; height: 64px; border-radius: 50%;
-    background: rgba(185,255,102,0.15); display: flex; align-items: center;
-    justify-content: center; margin-bottom: 16px;
-  }
+  .alt-label { font-size: 0.7rem; font-weight: 700; margin-left: auto; padding-left: 8px; white-space: nowrap; }
 </style>
 
 <!-- Header -->
@@ -38,6 +36,12 @@ import MainLayout from '../layouts/MainLayout.astro';
     </svg>
     <span id="err-count">0</span> erros
   </div>
+</div>
+
+<!-- Tabs: Erros vs Acertei no chute -->
+<div class="flex gap-2 mb-4">
+  <button class="tab-btn active" id="tab-erros">Erros</button>
+  <button class="tab-btn" id="tab-chutei">Acertei no chute</button>
 </div>
 
 <!-- Discipline chips -->
@@ -64,52 +68,53 @@ import MainLayout from '../layouts/MainLayout.astro';
 <script>
 const token = localStorage.getItem('gab_token');
 
-let allQuestions: Record<string, any> = {};
-let errorList: any[]  = [];
-let filtered:  any[]  = [];
-let current   = 0;
+let errosList: any[] = [];
+let chuteiList: any[] = [];
+let activeTab: 'erros' | 'chutei' = 'erros';
+let filtered: any[] = [];
+let current = 0;
 let activeDisc = '';
 
 async function init() {
-  const [qRes, errRes] = await Promise.all([
-    fetch('/questions.json'),
-    fetch('/api/progress/errors', { headers: { Authorization: `Bearer ${token}` } }),
-  ]);
-  const qs  = await qRes.json();
-  errorList = await errRes.json();
+  const res = await fetch('/api/progress/errors', { headers: { Authorization: `Bearer ${token}` } });
+  const data = res.ok ? await res.json() : { erros: [], chutei_acertos: [] };
+  errosList = data.erros;
+  chuteiList = data.chutei_acertos;
 
-  for (const q of qs) allQuestions[q.id] = q;
-
-  // Error badge
   const badge = document.getElementById('err-badge')!;
   const countEl = document.getElementById('err-count')!;
-  if (errorList.length > 0) {
+  if (errosList.length > 0) {
     badge.classList.remove('hidden');
     badge.classList.add('flex');
-    countEl.textContent = String(errorList.length);
+    countEl.textContent = String(errosList.length);
   }
+
+  document.getElementById('tab-chutei')!.textContent = `Acertei no chute (${chuteiList.length})`;
 
   buildDiscChips();
   applyFilters();
 }
 
+function activeList() {
+  return activeTab === 'erros' ? errosList : chuteiList;
+}
+
 function buildDiscChips() {
-  const discs = [...new Set<string>(
-    errorList.map(e => allQuestions[e.question_id]?.disc).filter(Boolean)
-  )].sort();
+  const list = activeList();
+  const discs = [...new Set<string>(list.map(e => e.disc).filter(Boolean))].sort();
 
   const container = document.getElementById('disc-chips')!;
   container.innerHTML = '';
 
   const all = document.createElement('button');
   all.className = 'disc-chip active';
-  all.textContent = `Todas (${errorList.length})`;
+  all.textContent = `Todas (${list.length})`;
   all.dataset.disc = '';
   all.addEventListener('click', () => setDisc('', all));
   container.appendChild(all);
 
   for (const d of discs) {
-    const count = errorList.filter(e => allQuestions[e.question_id]?.disc === d).length;
+    const count = list.filter(e => e.disc === d).length;
     const btn   = document.createElement('button');
     btn.className   = 'disc-chip';
     btn.textContent = `${d} (${count})`;
@@ -128,15 +133,11 @@ function setDisc(disc: string, btn: HTMLElement) {
 }
 
 function applyFilters() {
-  filtered = errorList.filter(e => {
-    const q = allQuestions[e.question_id];
-    if (!q) return false;
-    if (activeDisc && q.disc !== activeDisc) return false;
-    return true;
-  });
+  filtered = activeList().filter(e => !activeDisc || e.disc === activeDisc);
 
+  const label = activeTab === 'erros' ? 'erro' : 'lacuna';
   document.getElementById('err-label')!.textContent =
-    `${filtered.length} erro${filtered.length !== 1 ? 's' : ''} para revisar`;
+    `${filtered.length} ${label}${filtered.length !== 1 ? 's' : ''} para revisar`;
   renderQuestion();
 }
 
@@ -145,14 +146,14 @@ function renderQuestion() {
   const counter = document.getElementById('q-counter')!;
   const bar     = document.getElementById('q-progress')!;
 
-  document.getElementById('btn-prev')!.setAttribute('disabled', filtered.length === 0 || current === 0 ? 'true' : '');
-  document.getElementById('btn-next')!.setAttribute('disabled', current >= filtered.length - 1 ? 'true' : '');
-  if (current === 0) (document.getElementById('btn-prev') as HTMLButtonElement).disabled = true;
-  if (current >= filtered.length - 1) (document.getElementById('btn-next') as HTMLButtonElement).disabled = true;
-
   if (!filtered.length) {
     counter.textContent = '0 / 0';
     bar.style.width     = '0%';
+    (document.getElementById('btn-prev') as HTMLButtonElement).disabled = true;
+    (document.getElementById('btn-next') as HTMLButtonElement).disabled = true;
+    const msg = activeTab === 'erros'
+      ? { title: 'Nenhum erro encontrado!', sub: 'Continue assim — seu aproveitamento está ótimo.' }
+      : { title: 'Nenhuma lacuna encontrada!', sub: 'Você não tem acertos no chute pendentes de revisão.' };
     area.innerHTML = `
       <div class="q-card">
         <div class="empty-state">
@@ -161,27 +162,27 @@ function renderQuestion() {
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
-          <p class="font-semibold text-dark mb-1">Nenhum erro encontrado!</p>
-          <p class="text-sm text-dark/50">Continue assim — seu aproveitamento está ótimo.</p>
+          <p class="font-semibold text-dark mb-1">${msg.title}</p>
+          <p class="text-sm text-dark/50">${msg.sub}</p>
         </div>
       </div>`;
     return;
   }
 
+  (document.getElementById('btn-prev') as HTMLButtonElement).disabled = current === 0;
+  (document.getElementById('btn-next') as HTMLButtonElement).disabled = current >= filtered.length - 1;
+
   counter.textContent = `${current + 1} / ${filtered.length}`;
   bar.style.width     = `${((current + 1) / filtered.length) * 100}%`;
 
   const e = filtered[current];
-  const q = allQuestions[e.question_id];
-  if (!q) { area.innerHTML = '<div class="q-card"><div class="empty-state"><p class="text-dark/40">Questão não encontrada.</p></div></div>'; return; }
 
   const metaParts = [
-    q.ano   ? `Ano: <strong>${q.ano}</strong>`     : '',
-    q.banca ? `Banca: <strong>${q.banca}</strong>` : '',
-    q.cargo ? `Cargo: <strong>${q.cargo}</strong>` : '',
+    e.ano   ? `Ano: <strong>${e.ano}</strong>`     : '',
+    e.banca ? `Banca: <strong>${e.banca}</strong>` : '',
   ].filter(Boolean).join('<span class="mx-2 opacity-30">·</span>');
 
-  const altsHtml = q.a.map((alt: any) => {
+  const altsHtml = e.a.map((alt: any) => {
     const isChosen  = alt.l === e.chosen;
     const isCorrect = e.correct_answer && alt.l === e.correct_answer;
     let cls = '';
@@ -203,7 +204,13 @@ function renderQuestion() {
       </div>`;
   }).join('');
 
-  const resultHtml = e.correct_answer
+  const resultHtml = activeTab === 'chutei'
+    ? `<div class="mt-3 flex items-center gap-2 text-sm font-semibold bg-amber-100 text-amber-700 rounded-lg px-4 py-2.5">
+         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+           <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0110.5 3h3A2.25 2.25 0 0115.75 5.25V9m-7.5 0a2.25 2.25 0 00-2.25 2.25v7.5A2.25 2.25 0 008.25 21h7.5a2.25 2.25 0 002.25-2.25v-7.5A2.25 2.25 0 0015.75 9m-7.5 0h7.5"/></svg>
+         Você acertou, mas chutou — vale revisar o porquê.
+       </div>`
+    : e.correct_answer
     ? `<div class="mt-3 flex items-center gap-2 text-sm font-semibold bg-green text-dark rounded-lg px-4 py-2.5">
          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
@@ -216,20 +223,37 @@ function renderQuestion() {
     <div class="q-card">
       <div class="q-header">
         <span class="q-num">${current + 1}</span>
-        <span class="q-id">${q.id}</span>
-        <span class="q-breadcrumb"><strong>${q.disc}</strong>${q.subj ? ` › ${q.subj}` : ''}</span>
-        <span class="ml-auto text-xs bg-red-100 text-red-600 px-2.5 py-0.5 rounded-full font-medium">
+        <span class="q-id">${e.question_id}</span>
+        <span class="q-breadcrumb"><strong>${e.disc || '—'}</strong>${e.assunto ? ` › ${e.assunto}` : ''}</span>
+        <span class="ml-auto text-xs ${activeTab === 'chutei' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'} px-2.5 py-0.5 rounded-full font-medium">
           Respondeu: ${e.chosen || '—'}
         </span>
       </div>
       ${metaParts ? `<div class="q-meta"><span>${metaParts}</span></div>` : ''}
       <div class="q-body">
-        <p class="q-enunciado">${q.e}</p>
+        <p class="q-enunciado">${e.e}</p>
       </div>
       <div class="px-4 pb-3 flex flex-col gap-2">${altsHtml}</div>
       <div class="px-4 pb-4">${resultHtml}</div>
     </div>`;
 }
+
+document.getElementById('tab-erros')!.addEventListener('click', () => {
+  activeTab = 'erros';
+  document.getElementById('tab-erros')!.classList.add('active');
+  document.getElementById('tab-chutei')!.classList.remove('active');
+  activeDisc = ''; current = 0;
+  buildDiscChips();
+  applyFilters();
+});
+document.getElementById('tab-chutei')!.addEventListener('click', () => {
+  activeTab = 'chutei';
+  document.getElementById('tab-chutei')!.classList.add('active');
+  document.getElementById('tab-erros')!.classList.remove('active');
+  activeDisc = ''; current = 0;
+  buildDiscChips();
+  applyFilters();
+});
 
 document.getElementById('btn-next')?.addEventListener('click', () => {
   if (current < filtered.length - 1) { current++; renderQuestion(); }

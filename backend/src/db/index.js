@@ -203,6 +203,7 @@ db.exec(`
 try { db.prepare('ALTER TABLE cursos ADD COLUMN capa_base64 TEXT').run(); } catch {}
 try { db.prepare('ALTER TABLE questoes ADD COLUMN aula_id INTEGER REFERENCES aulas(id)').run(); } catch {}
 try { db.prepare('ALTER TABLE questoes ADD COLUMN origem TEXT').run(); } catch {}
+try { db.prepare('ALTER TABLE progress ADD COLUMN confidence TEXT').run(); } catch {}
 
 // Seed concursos se vazio
 const { c: concursosCount } = db.prepare('SELECT COUNT(*) AS c FROM concursos').get();
